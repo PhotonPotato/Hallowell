@@ -10,16 +10,26 @@ public class PlayerManager : MonoBehaviour
 
     Rigidbody2D rb;
 
+    float invincibilityTimer = 0;
+    public float invincibilityTime;
+
+    public playerHealthContainer playerHealth;
+
     void Start()
     {
         playerMovement= GetComponent<PlayerMovementScript>();
         playerCameraController= GetComponent<PlayerCameraController>();
 
         rb = GetComponent<Rigidbody2D>();
+
+        playerHealth = GetComponent<playerHealthContainer>();
     }
 
     void Update()
     {
+        //Update Timers
+        if (invincibilityTimer > 0) invincibilityTimer -= Time.deltaTime;
+
         //Reset position for debug when R is pressed
         if (Input.GetKey("r"))
         {
@@ -42,5 +52,17 @@ public class PlayerManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void dealDamage(GameObject obj)
+    {
+        if (invincibilityTimer > 0) return;
+
+        float damageAmount = obj.GetComponentInChildren<enemyHealthContainer>().damageDealt;
+
+        playerHealth.dealDamage(damageAmount);
+
+        //Add iFrames and timer
+        invincibilityTimer = invincibilityTime;
     }
 }

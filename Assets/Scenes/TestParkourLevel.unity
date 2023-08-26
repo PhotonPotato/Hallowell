@@ -5680,7 +5680,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.41440248, y: -0.15}
+  m_Offset: {x: 0, y: -0.15}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -5691,7 +5691,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 11.834886, y: 0.5}
+  m_Size: {x: 12.6636915, y: 0.5}
   m_EdgeRadius: 0
 --- !u!212 &540460896
 SpriteRenderer:
@@ -17203,13 +17203,13 @@ MonoBehaviour:
     blockType: 0
     indivID: 0
     blockID: 0
-  - length: 16.047049
+  - length: 15.502905
     height: 1.5
     colHeight: 0.5
     colOffset: -0.15
-    direction: -89.15864
+    direction: -89.129105
     rightEnd: {x: 33.176514, y: -14.942982}
-    leftEnd: {x: 32.94088, y: 1.1023377}
+    leftEnd: {x: 32.94088, y: 0.55813265}
     texture: {fileID: 21300000, guid: 093ea6c56b4087b4b87bd0b26a3747ce, type: 3}
     blockObj: {fileID: 1961911402}
     blockType: 0
@@ -22233,7 +22233,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.032444, y: -0.15}
+  m_Offset: {x: 0, y: -0.15}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -22244,7 +22244,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 15.985487, y: 0.5}
+  m_Size: {x: 14.743513, y: 0.5}
   m_EdgeRadius: 0
 --- !u!212 &1267779640
 SpriteRenderer:
@@ -22418,6 +22418,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerRB: {fileID: 1347565750}
   playerTransform: {fileID: 1347565754}
+  playerHealth: {fileID: 0}
   playerSpeed: 30
   effectedPlayerSpeed: 0
   xInput: 0
@@ -22433,6 +22434,8 @@ MonoBehaviour:
   jumpTimer: 0
   jumpCooldownTime: 0.2
   jumpButtonReset: 0
+  hitbox: {fileID: 0}
+  stompHitbox: {fileID: 0}
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -22441,6 +22444,7 @@ MonoBehaviour:
   detectionHeight: 1
   onGround: 0
   isJumping: 0
+  cayoteTime: 0.1
   onWall: 0
   wallDir: 0
   gravityMultOnWall: 0.5
@@ -22448,6 +22452,8 @@ MonoBehaviour:
   pushOffForce: 18
   pushOffTimer: 0
   pushOffDuration: 0.3
+  postPushOffDampeningOffset: 0.1
+  wallYVelocityDecay: 0.8
   showEffects: 1
   stompDetectionWidth: 0.2
   stompDetectionHeight: 0.165
@@ -28201,7 +28207,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 10
+  orthographic size: 16.558617
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -28371,8 +28377,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1961911402}
-  m_LocalRotation: {x: -0, y: -0, z: -0.701896, w: 0.71227944}
-  m_LocalPosition: {x: 33.058697, y: -6.920322, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0.7017124, w: 0.71246034}
+  m_LocalPosition: {x: 33.058697, y: -7.192425, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -28392,18 +28398,18 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.16346836, y: -0.15}
+  m_Offset: {x: 0, y: -0.15}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
     oldSize: {x: 20, y: 1.7}
-    newSize: {x: 16.047049, y: 1.5}
+    newSize: {x: 15.502905, y: 1.5}
     adaptiveTilingThreshold: 0.5
     drawMode: 2
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 15.720112, y: 0.5}
+  m_Size: {x: 15.502905, y: 0.5}
   m_EdgeRadius: 0
 --- !u!212 &1961911405
 SpriteRenderer:
@@ -28451,7 +28457,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 2
-  m_Size: {x: 16.047049, y: 1.5}
+  m_Size: {x: 15.502905, y: 1.5}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1

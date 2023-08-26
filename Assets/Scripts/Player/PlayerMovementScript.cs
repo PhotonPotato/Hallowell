@@ -6,6 +6,7 @@ public class PlayerMovementScript : MonoBehaviour
 {
     public Rigidbody2D playerRB;
     public Transform playerTransform;
+    public PlayerManager playerManager;
     SpriteRenderer playerRenderer;
     Animator playerAnimator;
     private Vector3 resetPos;
@@ -27,6 +28,10 @@ public class PlayerMovementScript : MonoBehaviour
     public float jumpCooldownTime;
     public bool jumpButtonReset = false;
     [Space]
+
+    //Player hitboxes and stomp detection vars
+    public BoxCollider2D hitbox;
+    public BoxCollider2D stompHitbox;
 
     //Ground detection vars
     public LayerMask groundMask;
@@ -67,6 +72,7 @@ public class PlayerMovementScript : MonoBehaviour
     public LayerMask stompLayers;
     public float bounceSpeedBoostTime;
     float bounceSpeedBoostTimer = 0;
+    float stompCayoteTimer = 0;
 
     //Stomp power controls
     public float stompBounceForce = 5;
@@ -79,6 +85,7 @@ public class PlayerMovementScript : MonoBehaviour
         playerRenderer = GetComponent<SpriteRenderer>();
         playerAnimator = GetComponent<Animator>();
         playerTransform = GetComponent<Transform>();
+        playerManager = GetComponent<PlayerManager>();
 
         landingEffects = GetComponentsInChildren<ParticleSystem>()[0];
         runningEffects = GetComponentsInChildren<ParticleSystem>()[1];
@@ -96,6 +103,7 @@ public class PlayerMovementScript : MonoBehaviour
 
         //Update cayote-time timer
         if (cayoteTimer > 0) cayoteTimer -= Time.deltaTime;
+        if (stompCayoteTimer > 0) stompCayoteTimer -= Time.deltaTime;
     }
 
     public void FixedUpdate()
@@ -112,7 +120,6 @@ public class PlayerMovementScript : MonoBehaviour
         if (Time.time - timePushedOff < 1)
         {
             xInput *= 1 - Mathf.Pow(.345f, (Time.time - timePushedOff) * 9.4f);
-            Debug.Log(xInput);
         }
 
         if (Mathf.Abs(xInput) > xInputMin)
@@ -342,7 +349,7 @@ public class PlayerMovementScript : MonoBehaviour
         /// **NOTE** This will only work if put after the clamping of the player velocity as a speed boost may exeed the clamp.
         /// May want to fix this by adding a temporary boost timer or smthn of the sort in the future, currently too llazy to care.
 
-        //Add quick blood effect fir the stomp
+        //Add quick blood effect for the stomp
         stompBloodEffect.Play();
 
 
@@ -367,6 +374,40 @@ public class PlayerMovementScript : MonoBehaviour
             {
                 //If not pressed, just give the player a slight upwards jelocity to cushion falls
                 yVel = 10;
+            }
+
+            /// NOTE
+            /// CHANGE the location of enemy damage later, it should not be within this loop.
+
+            //Detect player hitbox before the stomp hitbox.
+            List<Collider2D> playerHitboxCols = new List<Collider2D>();
+            if (hitbox.GetContacts(playerHitboxCols) != 0)
+            {
+                //Look through the colliders within the hitbox for enemies.
+                foreach (Collider2D col in playerHitboxCols)
+                {
+                    if (col.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+                    {
+                        //Reference the player manager to deal damage.
+                        playerManager.dealDamage(col.gameObject);
+                    }
+                }
+            }
+
+            //Detect stomp Hitbox
+            List<Collider2D> stompHitboxCols = new List<Collider2D>();
+            if (hitbox.GetContacts(stompHitboxCols) != 0)
+            {
+                //Look through the colliders within the hitbox for enemies.
+                foreach (Collider2D col in stompHitboxCols)
+                {
+                    if (col.gameObject.layer == LayerMask.NameToLayer("Enemy") && col.gameObject.tag == "BouncableEnemy")
+                    {
+                        //Contact point exists on top of object.
+                        enemyHealthContainer container = cols[0].gameObject.GetComponent<enemyHealthContainer>();
+                        container.dealDamage(50);
+                    }
+                }
             }
         }
     }
