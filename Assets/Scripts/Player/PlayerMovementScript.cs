@@ -32,6 +32,7 @@ public class PlayerMovementScript : MonoBehaviour
     //Player hitboxes and stomp detection vars
     public BoxCollider2D hitbox;
     public BoxCollider2D stompHitbox;
+    LayerMask enemyLayer;
 
     //Ground detection vars
     public LayerMask groundMask;
@@ -93,6 +94,8 @@ public class PlayerMovementScript : MonoBehaviour
         stompBloodEffect = GetComponentsInChildren<ParticleSystem>()[3];
 
         isJumping = false;
+
+        enemyLayer = LayerMask.NameToLayer("Enemy");
     }
 
     public void Update()
@@ -337,76 +340,71 @@ public class PlayerMovementScript : MonoBehaviour
         //Vector2 UL = new Vector2(transform.position.x + stompDetectionOffset.x - (stompDetectionWidth / 2), transform.position.y + stompDetectionOffset.y + (stompDetectionHeight / 2));
         //Vector2 BR = new Vector2(transform.position.x + stompDetectionOffset.x + (stompDetectionWidth / 2), transform.position.y + stompDetectionOffset.y - (stompDetectionHeight / 2));
 
-        Collider2D[] cols = Physics2D.OverlapBoxAll(originPoint, detectionBoxSize, 0, stompLayers);
-
-        //If nothing is detected then return.
-        if (cols == null) return;
-        if (cols.Length == 0) return;
-        Debug.Log("Dected trigger");
-        //TODO: get collider and the enemy that we are stomping to reduce its health/kill it
-        //
-
         /// **NOTE** This will only work if put after the clamping of the player velocity as a speed boost may exeed the clamp.
         /// May want to fix this by adding a temporary boost timer or smthn of the sort in the future, currently too llazy to care.
 
-        //Add quick blood effect for the stomp
-        stompBloodEffect.Play();
-
-
-        //If the collider is a stomp bouncable enemy:
-        if (cols[0].gameObject.tag == "BouncableEnemy")
+        //Cleanup start
+        //Detect stomp Hitbox
+        bool stompDetected = false;
+        List<Collider2D> stompHitboxCols = new List<Collider2D>();
+        if (stompHitbox.GetContacts(stompHitboxCols) != 0)
         {
-            //If the juump button is pressed, then add a speed boost and upwards vertical velocity.
-            if (Input.GetButton("Jump") && jumpButtonReset)
+            //Look through the colliders within the hitbox for enemies.
+            foreach (Collider2D col in stompHitboxCols)
             {
-                Debug.Log("Bounce!");
-                //Change the effected speed of the player for a specific time
-                effectedPlayerSpeed = playerSpeed + stompBounceSpeedBoost;
-                bounceSpeedBoostTimer = bounceSpeedBoostTime;
+                if (col.gameObject.layer == enemyLayer && col.gameObject.tag == "BouncableEnemy")
+                {
+                    //Contact point exists on top of object.
+                    enemyHealthContainer container = col.gameObject.GetComponent<enemyHealthContainer>();
+                    container.dealDamage(50);
 
-                //Add a jump to the player
-                yVel = stompBounceForce;
+                    //Detect stomp jump
+                    if (Input.GetButton("Jump") && jumpButtonReset)
+                    {
+                        Debug.Log("Bounce!");
+                        //Change the effected speed of the player for a specific time
+                        effectedPlayerSpeed = playerSpeed + stompBounceSpeedBoost;
+                        bounceSpeedBoostTimer = bounceSpeedBoostTime;
 
-                //Play the jump particle effect
-                jumpEffect.Play();
+                        //Add a jump to the player
+                        yVel = stompBounceForce;
+
+                        //Play the jump particle effect
+                        jumpEffect.Play();
+                    }
+                    else
+                    {
+                        //If not pressed, just give the player a slight upwards jelocity to cushion falls
+                        yVel = 10;
+                    }
+
+                    //Add quick blood effect for the stomp
+                    stompBloodEffect.Play();
+
+                    stompDetected = true;
+                }
             }
-            else
-            {
-                //If not pressed, just give the player a slight upwards jelocity to cushion falls
-                yVel = 10;
-            }
+        }
 
-            /// NOTE
-            /// CHANGE the location of enemy damage later, it should not be within this loop.
-
+        if (!stompDetected)
+        {
             //Detect player hitbox before the stomp hitbox.
             List<Collider2D> playerHitboxCols = new List<Collider2D>();
-            if (hitbox.GetContacts(playerHitboxCols) != 0)
+
+            //Use a mask that filters for enemies
+            ContactFilter2D playerHitboxFilter = new ContactFilter2D();
+            playerHitboxFilter.useTriggers = true;
+            playerHitboxFilter.useLayerMask = true;
+            //Bitshift the mask
+            playerHitboxFilter.layerMask = 1 << LayerMask.NameToLayer("Enemy"); ;
+
+            if (hitbox.GetContacts(playerHitboxFilter, playerHitboxCols) != 0)
             {
                 //Look through the colliders within the hitbox for enemies.
                 foreach (Collider2D col in playerHitboxCols)
                 {
-                    if (col.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-                    {
-                        //Reference the player manager to deal damage.
-                        playerManager.dealDamage(col.gameObject);
-                    }
-                }
-            }
-
-            //Detect stomp Hitbox
-            List<Collider2D> stompHitboxCols = new List<Collider2D>();
-            if (hitbox.GetContacts(stompHitboxCols) != 0)
-            {
-                //Look through the colliders within the hitbox for enemies.
-                foreach (Collider2D col in stompHitboxCols)
-                {
-                    if (col.gameObject.layer == LayerMask.NameToLayer("Enemy") && col.gameObject.tag == "BouncableEnemy")
-                    {
-                        //Contact point exists on top of object.
-                        enemyHealthContainer container = cols[0].gameObject.GetComponent<enemyHealthContainer>();
-                        container.dealDamage(50);
-                    }
+                    //Reference the player manager to deal damage.
+                    playerManager.dealDamage(col.gameObject);
                 }
             }
         }

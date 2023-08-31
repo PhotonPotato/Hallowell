@@ -10,10 +10,15 @@ public class PlayerManager : MonoBehaviour
 
     Rigidbody2D rb;
 
-    float invincibilityTimer = 0;
+    public float invincibilityTimer = 0;
     public float invincibilityTime;
 
+    [System.NonSerialized]
     public playerHealthContainer playerHealth;
+
+    //Effects
+    public GameObject invincibilityAura;
+    public float auraPulseFrequency = .5f;
 
     void Start()
     {
@@ -48,10 +53,34 @@ public class PlayerManager : MonoBehaviour
                 if (col.gameObject.tag == "Spikes")
                 {
                     //The player is touching spikes.
+
+                    //This value is adjustable
+                    dealDamage(20);
+
                     playerMovement.resetPlayerInLevel();
                 }
             }
         }
+
+        //Update invincibility effects
+        Color invincibilityAuraColor = invincibilityAura.GetComponent<SpriteRenderer>().color;
+
+        if (invincibilityTimer <= 0 && invincibilityAuraColor.a > 0)
+        {
+            invincibilityAuraColor.a -= auraPulseFrequency * Time.deltaTime;
+        }else if (invincibilityTimer > 0)
+        {
+            //The aura should pulse using a sin function for the alpha value that oscillates between 0-1
+            invincibilityAuraColor.a = .25f * Mathf.Sin(Time.time * auraPulseFrequency) + .75f;
+            //invincibilityAura.GetComponent<SpriteRenderer>().color = new Color(invincibilityAuraColor.r, invincibilityAuraColor.g, invincibilityAuraColor.b, );
+            invincibilityAura.SetActive(true);
+        }
+        else
+        {
+            invincibilityAura.SetActive(false);
+        }
+
+        invincibilityAura.GetComponent<SpriteRenderer>().color = invincibilityAuraColor;
     }
 
     public void dealDamage(GameObject obj)
@@ -59,6 +88,16 @@ public class PlayerManager : MonoBehaviour
         if (invincibilityTimer > 0) return;
 
         float damageAmount = obj.GetComponentInChildren<enemyHealthContainer>().damageDealt;
+
+        playerHealth.dealDamage(damageAmount);
+
+        //Add iFrames and timer
+        invincibilityTimer = invincibilityTime;
+    }
+
+    public void dealDamage(float damageAmount, bool forceDamage = false)
+    {
+        if (invincibilityTimer > 0 && forceDamage) return;
 
         playerHealth.dealDamage(damageAmount);
 
