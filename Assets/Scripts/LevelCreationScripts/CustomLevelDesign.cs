@@ -143,11 +143,16 @@ public class CustomLevelDesign : MonoBehaviour
         {
             if (Mathf.Abs(hit.point.y - clusterY) < maxYDiffFromClusterOrg)
             {
-                generateRandomDetailAtPoint(hit.point);
+                //generateRandomDetailAtPoint(hit.point);
             }
         }
     }
 
+    /// <TH>
+    /// THIS IS JUST REMOVED FOR BUILDS
+    /// ADD BACK WHEN DONE FOR USE OF CUSTOM EDITOR
+
+    /*
     public void generateRandomDetailAtPoint(Vector2 point)
     {
         //Get random index.
@@ -169,5 +174,5 @@ public class CustomLevelDesign : MonoBehaviour
         //Move the object up based on this value.
         newDetail.transform.position = new Vector3(point.x, point.y + yOffset, 0);
         newDetail.transform.SetParent(detailsParent.transform);
-    }
+    }*/
 }

@@ -11,7 +11,7 @@ public class revealingAreaScript : MonoBehaviour
     public bool playSoundOnReveal;
     public AudioSource revealAudio;
 
-    SpriteRenderer renderer;
+    SpriteRenderer maskRenderer;
     Color maskColor;
 
     bool playerDetected;
@@ -19,8 +19,8 @@ public class revealingAreaScript : MonoBehaviour
 
     private void Start()
     {
-        renderer = GetComponent<SpriteRenderer>();
-        maskColor = renderer.color;
+        maskRenderer = GetComponent<SpriteRenderer>();
+        maskColor = maskRenderer.color;
     }
 
     public void Update()
@@ -44,7 +44,7 @@ public class revealingAreaScript : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-        renderer.color = maskColor;
+        maskRenderer.color = maskColor;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
