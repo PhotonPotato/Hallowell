@@ -27,6 +27,8 @@ public class PlayerMovementScript : MonoBehaviour
     public float jumpTimer;
     public float jumpCooldownTime;
     public bool jumpButtonReset = false;
+    float jumpInputBuffer = 0;
+    public float inputBufferTime = .1f;
     [Space]
 
     //Player hitboxes and stomp detection vars
@@ -140,9 +142,14 @@ public class PlayerMovementScript : MonoBehaviour
 
         //Jumping
         //Some jankey getbuttondown type logic b/c get button down was not super responsive.
+        //*EDIT* "jumpButtonReset" pretty much just detects when you release the jump button so that we know when it gets pressed down (not held)bh
         bool jumpButton = Input.GetButton("Jump");
         if (!jumpButton) jumpButtonReset = true;
-        if (jumpButton && (onGround || onWall) && !isJumping && jumpButtonReset)
+
+        //Update jump buffer
+        if (jumpButton && (jumpButtonReset || (Time.time - jumpInputBuffer < 0.05 && Time.time - jumpInputBuffer != Mathf.NegativeInfinity))) jumpInputBuffer = Time.time;
+
+        if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) && (onGround || onWall) && !isJumping && jumpButtonReset)
         {
             yVel = jumpForce;
             isJumping = true;
@@ -166,6 +173,8 @@ public class PlayerMovementScript : MonoBehaviour
             {
                 jumpEffect.Play();
             }
+
+            jumpInputBuffer = Mathf.NegativeInfinity;
         }
         else
         {
@@ -178,7 +187,7 @@ public class PlayerMovementScript : MonoBehaviour
                 yVel = minYVel;
             }
 
-            //Watch out for logivc bugs here
+            //Watch out for logic bugs here
             if (onGround && !isJumping) yVel = 0;
             if (onWall) yVel *= wallYVelocityDecay;
             playerAnimator.ResetTrigger("Jump");
@@ -356,12 +365,11 @@ public class PlayerMovementScript : MonoBehaviour
                 {
                     //Contact point exists on top of object.
                     enemyHealthContainer container = col.gameObject.GetComponent<enemyHealthContainer>();
-                    container.dealDamage(50);
+                    container.dealDamage(5);
 
                     //Detect stomp jump
                     if (Input.GetButton("Jump") && jumpButtonReset)
                     {
-                        Debug.Log("Bounce!");
                         //Change the effected speed of the player for a specific time
                         effectedPlayerSpeed = playerSpeed + stompBounceSpeedBoost;
                         bounceSpeedBoostTimer = bounceSpeedBoostTime;

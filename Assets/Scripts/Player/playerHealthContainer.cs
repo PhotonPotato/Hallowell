@@ -13,4 +13,9 @@ public class playerHealthContainer : MonoBehaviour
     {
         currentHealth -= damage;
     }
+
+    public float getHealth()
+    {
+        return currentHealth;
+    }
 }

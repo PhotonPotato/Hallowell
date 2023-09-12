@@ -35,6 +35,7 @@ public class InventoryUIManager : MonoBehaviour
 
     public void openInventoryPanel()
     {
+        Debug.Log("received signal");
         refreshMaterialInventory();
 
         InventoryPanel.SetActive(true);

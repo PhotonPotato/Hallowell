@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -20,6 +21,11 @@ public class PlayerManager : MonoBehaviour
     public GameObject invincibilityAura;
     public float auraPulseFrequency = .5f;
 
+    //Playerhealth slider
+    public Slider healthBarSlider;
+    public Slider healthBarSmoothing;
+    public float smoothingValue = 10;
+
     void Start()
     {
         playerMovement= GetComponent<PlayerMovementScript>();
@@ -32,6 +38,8 @@ public class PlayerManager : MonoBehaviour
 
     void Update()
     {
+        updateHealthBar();
+
         //Update Timers
         if (invincibilityTimer > 0) invincibilityTimer -= Time.deltaTime;
 
@@ -55,7 +63,7 @@ public class PlayerManager : MonoBehaviour
                     //The player is touching spikes.
 
                     //This value is adjustable
-                    dealDamage(20);
+                    dealDamage(20, false);
 
                     playerMovement.resetPlayerInLevel();
                 }
@@ -72,7 +80,6 @@ public class PlayerManager : MonoBehaviour
         {
             //The aura should pulse using a sin function for the alpha value that oscillates between 0-1
             invincibilityAuraColor.a = .25f * Mathf.Sin(Time.time * auraPulseFrequency) + .75f;
-            //invincibilityAura.GetComponent<SpriteRenderer>().color = new Color(invincibilityAuraColor.r, invincibilityAuraColor.g, invincibilityAuraColor.b, );
             invincibilityAura.SetActive(true);
         }
         else
@@ -81,6 +88,23 @@ public class PlayerManager : MonoBehaviour
         }
 
         invincibilityAura.GetComponent<SpriteRenderer>().color = invincibilityAuraColor;
+    }
+
+    public void initializeHealthBar()
+    {
+        healthBarSlider.maxValue = playerHealth.maxHealth;
+        healthBarSmoothing.maxValue = playerHealth.maxHealth;
+    }
+
+    public void updateHealthBar()
+    {
+        float currentPlayerHealth = playerHealth.getHealth();
+
+        healthBarSlider.value = currentPlayerHealth;
+
+        float currentSmoothingBarValue = healthBarSmoothing.value;
+
+        healthBarSmoothing.value = currentSmoothingBarValue + ((currentPlayerHealth - currentSmoothingBarValue) / smoothingValue);
     }
 
     public void dealDamage(GameObject obj)
@@ -97,7 +121,7 @@ public class PlayerManager : MonoBehaviour
 
     public void dealDamage(float damageAmount, bool forceDamage = false)
     {
-        if (invincibilityTimer > 0 && forceDamage) return;
+        if (invincibilityTimer > 0 && !forceDamage) return;
 
         playerHealth.dealDamage(damageAmount);
 
