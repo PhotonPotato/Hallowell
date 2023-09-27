@@ -13,6 +13,9 @@ public class PlayerCameraController : MonoBehaviour
     public float camFollowDelay = 10f;
     public float camLookAheadMult = 1.5f;
 
+    public float currentCamSpeed;
+    public float lastCamSpeed;
+
     Vector2 desiredPos;
     CameraContraints camConstraints;
 
@@ -31,15 +34,39 @@ public class PlayerCameraController : MonoBehaviour
 
         desiredPos = pPos + (playerVel * camLookAheadMult);
 
-        camPos += (desiredPos - camPos) / camFollowDelay;
+        //Clamp BEFORE setting the position
+        desiredPos.x = Mathf.Clamp(desiredPos.x, camConstraints.xMin, camConstraints.xMax);
+        desiredPos.y = Mathf.Clamp(desiredPos.y, camConstraints.yMin, camConstraints.yMax);
 
-        //Add constraints.
-        camPos.x = Mathf.Clamp(camPos.x, camConstraints.xMin, camConstraints.xMax);
-        camPos.y = Mathf.Clamp(camPos.y, camConstraints.yMin, camConstraints.yMax);
+        //Update the cam speed
+        currentCamSpeed += (camConstraints.getGetSpeed() - currentCamSpeed) / 10;
+
+        camPos += (desiredPos - camPos) / currentCamSpeed;
+
+        //Add constraints if its not using desired posCam.
 
         mainCam.position = camPos;
 
         //Set the camera z to -10.
         mainCam.position += new Vector3(0, 0, -10);
+
+        //Set the zoom
+        Camera.main.orthographicSize += (camConstraints.zoom - Camera.main.orthographicSize) / camConstraints.zoomSpeed;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag != "CamConstraintZone") return;
+
+            //Return if its the same thing
+        if (collision.gameObject.GetComponent<CamConstraintHolder>().cameraConstraint == camConstraints) return;
+
+        Debug.Log("enter");
+
+    //Look for camera zones
+        currentCamSpeed = camConstraints.getGetSpeed();
+        camConstraints = collision.gameObject.GetComponent<CamConstraintHolder>().cameraConstraint;
+            
+        if (!camConstraints.useSpeedSmoothing) currentCamSpeed = camConstraints.getGetSpeed();
     }
 }

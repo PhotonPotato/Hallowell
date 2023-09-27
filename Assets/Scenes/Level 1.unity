@@ -55851,6 +55851,7 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  detectionOffsetX: 0
   detectionOffsetY: 0.5
   detectionWidth: 0.53
   detectionHeight: 1
@@ -55866,6 +55867,7 @@ MonoBehaviour:
   pushOffDuration: 0.5
   postPushOffDampeningOffset: 0.1
   wallYVelocityDecay: 0.92
+  jumpFromWallBase: 0
   showEffects: 1
   stompDetectionWidth: 0.2
   stompDetectionHeight: 0.165
@@ -56211,7 +56213,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c46bf575439bfc7459cd099b54685f1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraContraints: {fileID: 11400000, guid: 99e7e616130200849981f362ffbd72e2, type: 2}
+  cameraContraints: {fileID: 11400000, guid: ce66dd60593d24ef19a0b5a908541bb5, type: 2}
 --- !u!4 &670451171
 Transform:
   m_ObjectHideFlags: 0

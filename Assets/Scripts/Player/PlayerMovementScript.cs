@@ -38,6 +38,7 @@ public class PlayerMovementScript : MonoBehaviour
 
     //Ground detection vars
     public LayerMask groundMask;
+    public float detectionOffsetX;
     public float detectionOffsetY;
     public float detectionWidth;
     public float detectionHeight;
@@ -58,6 +59,7 @@ public class PlayerMovementScript : MonoBehaviour
     float timePushedOff;
     public float postPushOffDampeningOffset = 0.1f;
     public float wallYVelocityDecay = .8f;
+    public bool jumpFromWallBase;
     [Space]
 
     //Graphics
@@ -144,17 +146,29 @@ public class PlayerMovementScript : MonoBehaviour
         //Some jankey getbuttondown type logic b/c get button down was not super responsive.
         //*EDIT* "jumpButtonReset" pretty much just detects when you release the jump button so that we know when it gets pressed down (not held)bh
         bool jumpButton = Input.GetButton("Jump");
-        if (!jumpButton) jumpButtonReset = true;
+        if (!jumpButton)
+        {
+            jumpButtonReset = true;
+        }
 
         //Update jump buffer
         if (jumpButton && (jumpButtonReset || (Time.time - jumpInputBuffer < 0.05 && Time.time - jumpInputBuffer != Mathf.NegativeInfinity))) jumpInputBuffer = Time.time;
 
-        if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) && (onGround || onWall) && !isJumping && jumpButtonReset)
+        //Detect jump condition
+        if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) && (onGround || onWall) && (!isJumping || jumpFromWallBase) && jumpButtonReset)
         {
             yVel = jumpForce;
             isJumping = true;
             playerAnimator.SetTrigger("Jump");
             jumpTimer = jumpCooldownTime;
+
+            if (detectGround() && detectWall())
+            {
+                jumpFromWallBase = true;
+
+                //jumpTimer = .05f;
+            }
+
             jumpButtonReset = false;
 
             if (onWall)
@@ -188,8 +202,26 @@ public class PlayerMovementScript : MonoBehaviour
             }
 
             //Watch out for logic bugs here
+
+            ///JUMP BUG
+            ///For future Ty
+            ///-This line made it so that when you jumped against a wall, the player velocity ate the jump
+            ///-This is because isJumping got set to false somehow because you are touching the wall
+            ///
+            /// ISSUE
+            /// -isJumping does not get reset when you jump already touching a wall
+            /// 
+            ///FIX
+            ///-Set the if then near the jumpButtonReset() line
+            /// to only reset isJumping to false if the player is not on the wall
+            ///-Added new condition "jumpFromWallBase" that only is set to true in these scenarios
+            /// and is dependent on the jump timer
+            ///-Jump timer is too short (.2secs) so reset isJumping to false
+            /// 
+            ///-This if below is crutial to reset the velocity of the player when running off edges.
             if (onGround && !isJumping) yVel = 0;
-            if (onWall) yVel *= wallYVelocityDecay;
+
+            if (onWall && !jumpFromWallBase) yVel *= wallYVelocityDecay;
             playerAnimator.ResetTrigger("Jump");
         }
 
@@ -253,21 +285,26 @@ public class PlayerMovementScript : MonoBehaviour
         {
             //If just landed
             justLanded();
+
+            ///Adding the if on wall here fixes the jump bug against the wall that was described above.
             isJumping = false;
         }
-        else jumpTimer -= Time.deltaTime;
+        if (jumpTimer <= 0) jumpFromWallBase = false;
+
+        if (onWall && jumpFromWallBase) isJumping = false;
 
         //Run some wall detection for jump resets.
         if (detectJumpReset())
         {
             //This returns true when it goes from not on wall to on wall (once every time you touch a wall).
-            isJumping = false;
+            ///This also helps to hix the jump against the wall bug described above
+            if (!detectGround()) isJumping = false;
         }
     }
 
     public bool detectGround()
     {
-        Collider2D[] groundCols = Physics2D.OverlapAreaAll(new Vector2(playerTransform.position.x - (detectionWidth / 2), playerTransform.position.y - detectionOffsetY + (detectionHeight / 2)), new Vector2(playerTransform.position.x + (detectionWidth / 2), playerTransform.position.y - (detectionOffsetY) - (detectionHeight / 2)));
+        Collider2D[] groundCols = Physics2D.OverlapAreaAll(new Vector2(detectionOffsetX + playerTransform.position.x - (detectionWidth / 2), detectionOffsetX + playerTransform.position.y - detectionOffsetY + (detectionHeight / 2)), new Vector2(playerTransform.position.x + (detectionWidth / 2), playerTransform.position.y - (detectionOffsetY) - (detectionHeight / 2)));
 
         if (groundCols == null && cayoteTimer <= 0) return false;
 

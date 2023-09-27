@@ -8,6 +8,12 @@ public class enemyHealthContainer : MonoBehaviour
     //This is just a universal container to store health in the game.
     public int objID;
     public bool destroyOnNoHealth = false;
+
+    public bool respawnWithTime = false;
+    public bool inactive = false;
+    public float respawnTime = 10;
+    float respawnTimer = 0;
+
     public float maxHealth;
     public float currentHealth;
 
@@ -22,6 +28,22 @@ public class enemyHealthContainer : MonoBehaviour
     private void Update()
     {
         if (healthBarCreated) barObj.GetComponentInChildren<Slider>().value = currentHealth;
+
+        if (respawnTimer > 0) respawnTimer -= Time.deltaTime;
+        else if (respawnWithTime && inactive)
+        {
+            //Unhide the enemy (and add effects
+            GetComponent<SpriteRenderer>().enabled = true;
+            GetComponent<BoxCollider2D>().enabled = true;
+            GetComponent<Rigidbody2D>().simulated = true;
+
+            //Hide the health bar
+            inactive = false;
+
+            currentHealth = maxHealth;
+
+            ///SPAWN EFFECTS HERE
+        }
     }
 
     //A public mehtod to deal damage
@@ -29,8 +51,22 @@ public class enemyHealthContainer : MonoBehaviour
     {
         currentHealth -= damage;
 
-        if (destroyOnNoHealth && currentHealth <= 0)
+        if (respawnWithTime && currentHealth <= 0)
         {
+            //Hide the enemy and heatlh bar for reset
+            //Turn off the renderer
+            GetComponent<SpriteRenderer>().enabled = false;
+            GetComponent<BoxCollider2D>().enabled = false;
+            GetComponent<Rigidbody2D>().simulated = false;
+
+            //Hide the health bar
+            barObj.SetActive(false);
+            inactive = true;
+            respawnTimer = respawnTime;
+        }
+        else if (destroyOnNoHealth && currentHealth <= 0)
+        {
+            //Destroy the current objecta and health bar and remove from
             if (healthBarCreated) Destroy(barObj);
 
             Destroy(this.transform.parent.gameObject);
@@ -46,6 +82,10 @@ public class enemyHealthContainer : MonoBehaviour
                 barObj.GetComponentInChildren<Slider>().maxValue = maxHealth;
 
                 healthBarCreated = true;
+            }
+            else if (healthBarCreated)
+            {
+                barObj.SetActive(true);
             }
         }
     }

@@ -9,6 +9,7 @@ TagManager:
   - Wall
   - BouncableEnemy
   - Spikes
+  - CamConstraintZone
   layers:
   - Default
   - TransparentFX
