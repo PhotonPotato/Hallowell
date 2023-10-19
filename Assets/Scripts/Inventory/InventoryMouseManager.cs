@@ -13,13 +13,35 @@ public class InventoryMouseManager : MonoBehaviour
     public Text mouseLabel;
     public LineRenderer mouseLine;
     bool onSlot = false;
+    public bool onCrockpotSlot = false;
     GameObject closestSlot;
+
+    public bool mouseContainerFull = false;
+    public MaterialItemSlot mouseItemContainer;
+    public Image mouseContainerImage;
+    public GameObject dragBackButtonObject;
+
+    private void Start()
+    {
+        mouseItemContainer = GetComponent<MaterialItemSlot>();
+
+        mouseItemContainer.icon = mouseContainerImage;
+    }
 
     private void Update()
     {
+        print(UIMan.playerInventory.playerMaterialInventory.Count);
         mousePos = Input.mousePosition + labelPosOffset;
 
         mouseLabel.gameObject.transform.position = mousePos;
+
+        //Update where the image sits nad its visibility
+        mouseContainerImage.gameObject.transform.position = mousePos;
+        mouseContainerImage.gameObject.SetActive(mouseContainerFull && UIMan.inventoryPanelOpen);
+
+        //SIMPLE HACK BC I GOT NO WIIF
+        //CHANGE THIS TO MAKE THE BUTTON SEE THROUGH
+        dragBackButtonObject.SetActive(mouseContainerFull && !onSlot);
 
         if (onSlot)
         {
@@ -32,13 +54,109 @@ public class InventoryMouseManager : MonoBehaviour
 
             mouseLine.SetPositions(positions);
         }
+
+        //Look for clicks on the inventory objects
+        if (onSlot && Input.GetMouseButtonDown(0))
+        {
+            Debug.Log("Clicked");
+
+            //DEBUG
+            foreach (MaterialItem j in UIMan.playerInventory.playerMaterialInventory)
+            {
+                Debug.Log(j.itemName);
+            }
+
+            //Initiate the slot movement
+            MaterialItemSlot slot = closestSlot.GetComponentInParent<MaterialItemSlot>();
+
+            //CHANGE THIS LATER TOO LAZY RN
+            if (slot == null) return;
+
+            if (slot.item != null) Debug.Log(slot.item.itemIcon != null);
+
+            //First check if the slot item exist
+            if (slot.item == null)
+            {
+                ///AddIcon() is an awful name for a function that effectively just resets a slot to a material item
+
+                if (mouseContainerFull)
+                {
+                    //Drop the item in the container off
+                    slot.AddIcon(mouseItemContainer.getItem());
+
+                    //Reset the container
+                    mouseItemContainer.ClearSlot(false);
+                    mouseContainerFull = false;
+                }
+            }
+            else
+            {
+                //Closest slot is full
+
+                if (mouseContainerFull)
+                {
+                    //Swap the item in the slot and the one in the container
+                    //Do this by creating a temporary copy with no pointers to existing MatItemSlot vars. 
+                    MaterialItem tempSwapItem = slot.getItem();
+
+                    slot.AddIcon(mouseItemContainer.item.getDeepCopy());
+
+                    mouseItemContainer.AddIcon(tempSwapItem);
+                }
+                else
+                {
+                    //Collect the item and put it into the mouseContainer
+                    mouseItemContainer.AddIcon(slot.getItem());
+
+                    slot.ClearSlot(false);
+
+                    if (!onCrockpotSlot)
+                    {
+                        int slotIndex = slot.transform.GetSiblingIndex();
+
+                        Debug.Log("removing at " + slotIndex);
+
+                        //Remove item references from both the playerInventory (most reliable list of all players items)
+                        //and the InventoryManagers 'materialItemSlots' list that holds all actual gameObject component
+                        //references.The latter can be dont by deleteing the actual gameobject and then calling an update
+                        //function to update the list to GetComponentsInChildren tyoe thing
+                        UIMan.playerInventory.removeItem(slotIndex);
+
+                        //Delete the existing gameobject slot
+                        Destroy(slot.gameObject);
+
+                        //Update variables and slot displays
+                        UIMan.refreshMaterialInventory();
+
+                        //Create a new array deleting this item out of the material item slot array
+                        MaterialItemSlot[] editedMaterialItemSlotArray = new MaterialItemSlot[UIMan.materialItemSlots.Length - 1];
+                        for (int i = 0, j = 0; i < UIMan.materialItemSlots.Length - 1; i++)
+                        {
+                            if (i != slotIndex)
+                            {
+                                editedMaterialItemSlotArray[j] = UIMan.materialItemSlots[i];
+                                j++;
+                            }
+                        }
+                        UIMan.materialItemSlots = editedMaterialItemSlotArray;
+
+                        //onMouseOff never updates if the slot is destroyed so we [effectively] do it for them (just what matters in the funciton)
+                        onSlot = false;
+                        mouseLabel.gameObject.SetActive(false);
+                        mouseLine.gameObject.SetActive(false);
+                    }
+                }
+
+                mouseContainerFull = true;
+            }
+        }
     }
 
 
-    public void initListener(GameObject obj)
+    public void initListener(GameObject obj, int type  = 0)
     {
         //This script will only work if the object has a button.
-        if (obj.GetComponent<Button>() == null) return;
+        if (obj.GetComponentInChildren<Button>() == null) return;
 
         EventTrigger.Entry mousePointerEnter = new EventTrigger.Entry();
         mousePointerEnter.eventID = EventTriggerType.PointerEnter;
@@ -57,28 +175,60 @@ public class InventoryMouseManager : MonoBehaviour
 
     public void mouseOnSlot(GameObject obj) 
     {
-        string text = obj.GetComponentInParent<MaterialItemSlot>().item.getItemName();
+        MaterialItemSlot slot = obj.GetComponentInParent<MaterialItemSlot>();
+        MaterialItem item = slot.item;
+        
+        //Make sure its not just an empty crockpotslot
+        if (obj.name.Contains("Crockpot Slot"))
+        {
+            onCrockpotSlot = true;
+        }
 
-        if (text == null) return;
-
-        mouseLabel.text = text;
-        mouseLabel.gameObject.SetActive(true);
-
+        //Update the closest slot and indicator
         closestSlot = obj;
         onSlot = true;
+
+        //Make sure the item exists
+        if (item == null) return;
+        if (item.getItemName() == null) return;
+
+        mouseLabel.text = item.getItemName();
+        mouseLabel.gameObject.SetActive(true);
+        
         mouseLine.gameObject.SetActive(true);
     }
 
     public void mouseOffSlot(GameObject obj)
     {
-        string text = obj.GetComponentInParent<MaterialItemSlot>().item.getItemName();
+        //Make sure its not just an empty crockpotslot
+        if (obj.name.Contains("Crockpot Slot"))
+        {
+            onCrockpotSlot = false;
+        }
 
-        if (text == null) return;
-
-        mouseLabel.gameObject.SetActive(false);
-
+        //Update the closest slot and indicator
         closestSlot = obj;
         onSlot = false;
+
+        //No need to check if item exists, just hide the label and line
+        mouseLabel.gameObject.SetActive(false);
         mouseLine.gameObject.SetActive(false);
+    }
+
+    public void inventoryDragBackClick()
+    {
+        if (mouseContainerFull && !onSlot)
+        {
+            //Ass new item to the inventory
+            Debug.Log("yes");
+            UIMan.playerInventory.addItem(mouseItemContainer.item);
+
+            UIMan.refreshMaterialInventory();
+            UIMan.updateMaterialInventorySlots();
+
+            //Reset the container
+            mouseItemContainer.ClearSlot(false);
+            mouseContainerFull = false;
+        }
     }
 }

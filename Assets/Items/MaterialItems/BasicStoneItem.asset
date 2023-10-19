@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: BasicStoneItem
   m_EditorClassIdentifier: 
   itemName: Basic Stone
+  itemType: 0
   itemIcon: {fileID: -7037020550584522698, guid: 50d5dba943aac5e49bf06379f0bdad37, type: 3}
   id: 0
-  quantity: 0
-  maxQuantity: 0
+  quantity: 1
+  maxQuantity: 1
   stackable: 0
   empty: 0

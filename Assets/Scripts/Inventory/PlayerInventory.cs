@@ -19,4 +19,14 @@ public class PlayerInventory
     {
         playerMaterialInventory.Add(item.getDeepCopy());
     }
+
+    public void removeItem(MaterialItem item)
+    {
+        playerMaterialInventory.Remove(item);
+    }
+
+    public void removeItem(int index)
+    {
+        playerMaterialInventory.RemoveAt(index);
+    }
 }

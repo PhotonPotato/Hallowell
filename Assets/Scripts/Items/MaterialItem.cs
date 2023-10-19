@@ -6,10 +6,11 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "ScriptableObjects/Items/MaterialItem")]
 public class MaterialItem : ItemData
 {
-    public void init(string name, Sprite icon, int id, int quantity, int maxQuantity, bool stackable, bool empty = true)
+    public void init(string name, Sprite icon, int id, int quantity, int maxQuantity, bool stackable, bool empty = true, int itemType = 0)
     {
         this.itemName = name;
         this.itemIcon = icon;
+        this.itemType = itemType;
         this.id = id;
         this.quantity = quantity;
         this.maxQuantity = maxQuantity;

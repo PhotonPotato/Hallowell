@@ -13,4 +13,5 @@ c - Commit/update number (playable/buggy)
 d - Very high level title/description
 t - Type of version
     - Nothing = default
+    - a = alpha (incomplete inmplementation)
     - b = Version with build

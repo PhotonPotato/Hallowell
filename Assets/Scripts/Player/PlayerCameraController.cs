@@ -39,7 +39,7 @@ public class PlayerCameraController : MonoBehaviour
         desiredPos.y = Mathf.Clamp(desiredPos.y, camConstraints.yMin, camConstraints.yMax);
 
         //Update the cam speed
-        currentCamSpeed += (camConstraints.getGetSpeed() - currentCamSpeed) / 10;
+        currentCamSpeed += (camConstraints.getSpeed() - currentCamSpeed) / 10;
 
         camPos += (desiredPos - camPos) / currentCamSpeed;
 
@@ -64,9 +64,9 @@ public class PlayerCameraController : MonoBehaviour
         Debug.Log("enter");
 
     //Look for camera zones
-        currentCamSpeed = camConstraints.getGetSpeed();
+        currentCamSpeed = camConstraints.getSpeed();
         camConstraints = collision.gameObject.GetComponent<CamConstraintHolder>().cameraConstraint;
             
-        if (!camConstraints.useSpeedSmoothing) currentCamSpeed = camConstraints.getGetSpeed();
+        if (!camConstraints.useSpeedSmoothing || currentCamSpeed < camConstraints.getSpeed()) currentCamSpeed = camConstraints.getSpeed();
     }
 }

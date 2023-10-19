@@ -13,7 +13,7 @@ public class InventoryUIManager : MonoBehaviour
     public GameObject InventoryPanel;
     public GameObject InventorySlotObject;
     public Transform inventorySlotsParent;
-    MaterialItemSlot[] materialItemSlots;
+    public MaterialItemSlot[] materialItemSlots;
 
     public InventoryMouseManager mouseMan;
 
@@ -22,9 +22,11 @@ public class InventoryUIManager : MonoBehaviour
     public float attractionForce;
     public float pickupRadius;
 
+    public bool inventoryPanelOpen = false;
+
     void Start()
     {
-        materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
+        //materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
         playerInventory = new PlayerInventory(this);
     }
 
@@ -40,6 +42,8 @@ public class InventoryUIManager : MonoBehaviour
 
         InventoryPanel.SetActive(true);
         hotBarPanel.SetActive(false);
+
+        inventoryPanelOpen = true;
     }
 
     public void closeInventoryPanel()
@@ -47,10 +51,16 @@ public class InventoryUIManager : MonoBehaviour
         InventoryPanel.SetActive(false);
         hotBarPanel.SetActive(true);
         mouseMan.mouseLabel.gameObject.SetActive(false);
+
+        inventoryPanelOpen = false;
     }
 
     public void refreshMaterialInventory()
     {
+        materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
+
+        Debug.Log("Len: " + materialItemSlots.Length + " player shitter: " + playerInventory.playerMaterialInventory.Count);
+
         //Check for the correct amount of slots.
         for (int i = getSlotsLength(); i < playerInventory.playerMaterialInventory.Count; i++)
         {
@@ -60,6 +70,7 @@ public class InventoryUIManager : MonoBehaviour
             mouseMan.initListener(obj.GetComponentsInChildren<Transform>()[1].gameObject);
         }
 
+        //Update list of item slots
         materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
     }
 
@@ -67,7 +78,7 @@ public class InventoryUIManager : MonoBehaviour
     {
         for (int i = 0; i < getSlotsLength(); i++)
         {
-            materialItemSlots[i].AddIcon(playerInventory.playerMaterialInventory[i]);
+            materialItemSlots[i].AddIcon(playerInventory.playerMaterialInventory[i].getDeepCopy());
         }
     }
 
@@ -107,11 +118,19 @@ public class InventoryUIManager : MonoBehaviour
         
         foreach(Collider2D col in itemsInRadius)
         {
+            //Filter for objects of the right tag
             if (col.gameObject.tag == "CollectableMaterialItem")
             {
-                playerInventory.addItem(col.gameObject.GetComponent<MaterialItemSlot>().item);
+                //Add item to inventory list
+                playerInventory.addItem(col.gameObject.GetComponent<MaterialItemSlot>().getItem());
+
+                //Refresh the inventory so that the list of material item slots is updated.
                 refreshMaterialInventory();
+
+                //Updates the icons and data of the actual gameObjects
                 updateMaterialInventorySlots();
+
+                //Destroys the Collectable item
                 Destroy(col.gameObject);
                 return;
             }

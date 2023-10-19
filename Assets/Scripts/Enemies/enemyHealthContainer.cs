@@ -10,7 +10,7 @@ public class enemyHealthContainer : MonoBehaviour
     public bool destroyOnNoHealth = false;
 
     public bool respawnWithTime = false;
-    public bool inactive = false;
+    bool inactive = false;
     public float respawnTime = 10;
     float respawnTimer = 0;
 

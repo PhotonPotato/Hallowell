@@ -17,7 +17,7 @@ public class CameraContraints : ScriptableObject
 
     public float speed = 10;
 
-    public float getGetSpeed()
+    public float getSpeed()
     {
         return speed;
     }

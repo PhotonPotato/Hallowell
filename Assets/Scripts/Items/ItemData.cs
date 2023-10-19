@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class ItemData : ScriptableObject
 {
     public string itemName;
+    public int itemType;
     public Sprite itemIcon;
     public int id;
     public int quantity;
@@ -15,5 +17,10 @@ public class ItemData : ScriptableObject
     public string getItemName()
     {
         return itemName;
+    }
+
+    public int getItemType()
+    {
+        return itemType;
     }
 }
