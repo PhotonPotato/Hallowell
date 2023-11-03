@@ -13,7 +13,9 @@ public class InventoryMouseManager : MonoBehaviour
     public Text mouseLabel;
     public LineRenderer mouseLine;
     bool onSlot = false;
-    public bool onCrockpotSlot = false;
+    bool onCrockpotSlot = false;
+    //For slots that cannot have things placed in but only taken
+    public bool onOutputSlot = false;
     GameObject closestSlot;
 
     public bool mouseContainerFull = false;
@@ -30,7 +32,8 @@ public class InventoryMouseManager : MonoBehaviour
 
     private void Update()
     {
-        print(UIMan.playerInventory.playerMaterialInventory.Count);
+        //CLEAN
+        //print(UIMan.playerInventory.playerMaterialInventory.Count);
         mousePos = Input.mousePosition + labelPosOffset;
 
         mouseLabel.gameObject.transform.position = mousePos;
@@ -58,6 +61,7 @@ public class InventoryMouseManager : MonoBehaviour
         //Look for clicks on the inventory objects
         if (onSlot && Input.GetMouseButtonDown(0))
         {
+            /* REMOVE
             Debug.Log("Clicked");
 
             //DEBUG
@@ -65,7 +69,7 @@ public class InventoryMouseManager : MonoBehaviour
             {
                 Debug.Log(j.itemName);
             }
-
+            */
             //Initiate the slot movement
             MaterialItemSlot slot = closestSlot.GetComponentInParent<MaterialItemSlot>();
 
@@ -79,7 +83,8 @@ public class InventoryMouseManager : MonoBehaviour
             {
                 ///AddIcon() is an awful name for a function that effectively just resets a slot to a material item
 
-                if (mouseContainerFull)
+                //Make sure you are not trying to place stuff into a strictly output slot
+                if (mouseContainerFull && !onOutputSlot)
                 {
                     //Drop the item in the container off
                     slot.AddIcon(mouseItemContainer.getItem());
@@ -93,7 +98,7 @@ public class InventoryMouseManager : MonoBehaviour
             {
                 //Closest slot is full
 
-                if (mouseContainerFull)
+                if (mouseContainerFull && !onOutputSlot)
                 {
                     //Swap the item in the slot and the one in the container
                     //Do this by creating a temporary copy with no pointers to existing MatItemSlot vars. 
@@ -110,7 +115,10 @@ public class InventoryMouseManager : MonoBehaviour
 
                     slot.ClearSlot(false);
 
-                    if (!onCrockpotSlot)
+                    mouseLabel.gameObject.SetActive(false);
+                    mouseLine.gameObject.SetActive(false);
+
+                    if (!onCrockpotSlot & !onOutputSlot)
                     {
                         int slotIndex = slot.transform.GetSiblingIndex();
 
@@ -142,8 +150,6 @@ public class InventoryMouseManager : MonoBehaviour
 
                         //onMouseOff never updates if the slot is destroyed so we [effectively] do it for them (just what matters in the funciton)
                         onSlot = false;
-                        mouseLabel.gameObject.SetActive(false);
-                        mouseLine.gameObject.SetActive(false);
                     }
                 }
 
@@ -168,9 +174,9 @@ public class InventoryMouseManager : MonoBehaviour
         //make it so that when this event triggers, it will send the "updatePointerText" finction a string containing the name of the item.
         mousePointerExit.callback.AddListener((eventData) => { mouseOffSlot(obj); });
 
-        obj.AddComponent<EventTrigger>();
-        obj.GetComponent<EventTrigger>().triggers.Add(mousePointerEnter);
-        obj.GetComponent<EventTrigger>().triggers.Add(mousePointerExit);
+        EventTrigger trigger = obj.AddComponent<EventTrigger>();
+        trigger.triggers.Add(mousePointerEnter);
+        trigger.triggers.Add(mousePointerExit);
     }
 
     public void mouseOnSlot(GameObject obj) 
@@ -183,6 +189,8 @@ public class InventoryMouseManager : MonoBehaviour
         {
             onCrockpotSlot = true;
         }
+
+        onOutputSlot = obj.tag == "UIOutputSlot";
 
         //Update the closest slot and indicator
         closestSlot = obj;
@@ -206,6 +214,9 @@ public class InventoryMouseManager : MonoBehaviour
             onCrockpotSlot = false;
         }
 
+        //Might be unnecessary to set these.
+        onOutputSlot = false;
+
         //Update the closest slot and indicator
         closestSlot = obj;
         onSlot = false;
@@ -221,6 +232,21 @@ public class InventoryMouseManager : MonoBehaviour
         {
             //Ass new item to the inventory
             Debug.Log("yes");
+            UIMan.playerInventory.addItem(mouseItemContainer.item);
+
+            UIMan.refreshMaterialInventory();
+            UIMan.updateMaterialInventorySlots();
+
+            //Reset the container
+            mouseItemContainer.ClearSlot(false);
+            mouseContainerFull = false;
+        }
+    }
+
+    public void OnInventoryClose()
+    {
+        if (mouseContainerFull)
+        {
             UIMan.playerInventory.addItem(mouseItemContainer.item);
 
             UIMan.refreshMaterialInventory();

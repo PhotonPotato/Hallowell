@@ -60,7 +60,7 @@ public class enemyHealthContainer : MonoBehaviour
             GetComponent<Rigidbody2D>().simulated = false;
 
             //Hide the health bar
-            barObj.SetActive(false);
+            if (barObj != null) barObj.SetActive(false);
             inactive = true;
             respawnTimer = respawnTime;
         }

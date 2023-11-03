@@ -10,6 +10,8 @@ TagManager:
   - BouncableEnemy
   - Spikes
   - CamConstraintZone
+  - UIOutputSlot
+  - Crockpot
   layers:
   - Default
   - TransparentFX
@@ -21,7 +23,7 @@ TagManager:
   - Wall
   - BackgroundDetail
   - Enemy
-  - 
+  - InteractableStation
   - 
   - 
   - 

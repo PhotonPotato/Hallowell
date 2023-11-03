@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4521b86759803ad428ea8d2175d40fe4, type: 3}
   m_Name: StoneBowl
   m_EditorClassIdentifier: 
-  itemName: 
+  itemName: Soup
   itemType: 0
-  itemIcon: {fileID: 0}
+  itemIcon: {fileID: 8084273498038366672, guid: 50d5dba943aac5e49bf06379f0bdad37, type: 3}
   id: 0
   quantity: 0
   maxQuantity: 0

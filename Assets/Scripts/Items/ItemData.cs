@@ -23,4 +23,11 @@ public class ItemData : ScriptableObject
     {
         return itemType;
     }
+
+    public bool compareTo(ItemData item)
+    {
+        if (item == null) return false;
+
+        return (itemName == item.itemName && itemType == item.itemType && id == item.id);
+    }
 }

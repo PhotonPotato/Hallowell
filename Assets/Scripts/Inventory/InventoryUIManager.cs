@@ -6,6 +6,7 @@ public class InventoryUIManager : MonoBehaviour
 {
     [System.NonSerialized]
     public PlayerInventory playerInventory;
+    public PlayerManager playerMan;
     public Transform playerPos;
 
     public GameObject hotBarPanel;
@@ -23,11 +24,13 @@ public class InventoryUIManager : MonoBehaviour
     public float pickupRadius;
 
     public bool inventoryPanelOpen = false;
+    [System.NonSerialized] public bool crockpotPanelOpen = false;
 
     void Start()
     {
         //materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
         playerInventory = new PlayerInventory(this);
+        playerMan = FindObjectOfType<PlayerManager>();
     }
 
     void Update()
@@ -52,7 +55,11 @@ public class InventoryUIManager : MonoBehaviour
         hotBarPanel.SetActive(true);
         mouseMan.mouseLabel.gameObject.SetActive(false);
 
+        if (crockpotPanelOpen) playerMan.currentInteractionObject.GetComponent<CrockPotBehavior>().closeCrockPot(false);
+
         inventoryPanelOpen = false;
+
+        mouseMan.OnInventoryClose();
     }
 
     public void refreshMaterialInventory()

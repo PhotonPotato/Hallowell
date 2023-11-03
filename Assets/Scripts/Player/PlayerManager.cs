@@ -8,6 +8,7 @@ public class PlayerManager : MonoBehaviour
     //Script attached to player character
     public PlayerMovementScript playerMovement;
     public PlayerCameraController playerCameraController;
+    InventoryUIManager playerInventoryManager;
 
     Rigidbody2D rb;
 
@@ -26,14 +27,22 @@ public class PlayerManager : MonoBehaviour
     public Slider healthBarSmoothing;
     public float smoothingValue = 10;
 
+    //Station interaction radius
+    public float stationInteractionRadius = 5;
+    public LayerMask stationInteractionMask;
+
+    [System.NonSerialized] public GameObject currentInteractionObject;
+
     void Start()
     {
         playerMovement= GetComponent<PlayerMovementScript>();
-        playerCameraController= GetComponent<PlayerCameraController>();
+        playerCameraController = GetComponent<PlayerCameraController>();
 
         rb = GetComponent<Rigidbody2D>();
 
         playerHealth = GetComponent<playerHealthContainer>();
+
+        playerInventoryManager = FindObjectOfType<InventoryUIManager>();
     }
 
     void Update()
@@ -88,6 +97,28 @@ public class PlayerManager : MonoBehaviour
         }
 
         invincibilityAura.GetComponent<SpriteRenderer>().color = invincibilityAuraColor;
+
+
+        //Check for nearby interactable stations
+        if (Input.GetKeyDown("e"))
+        {
+            //Maybe play a sound or smthn
+            checkForInteraction();
+        }
+
+        if (playerInventoryManager.crockpotPanelOpen)
+        {
+            if (currentInteractionObject == null) return;
+
+            //Might wanna optimize with this later
+            if (Vector2.Distance(currentInteractionObject.transform.position, transform.position) >= stationInteractionRadius)
+            {
+                GameObject openCrockPot = GameObject.FindGameObjectWithTag("Crockpot");
+
+                //Close crockpot without closing inventory panel
+                openCrockPot.GetComponent<CrockPotBehavior>().closeCrockPot(false);
+            }
+        }
     }
 
     public void initializeHealthBar()
@@ -127,5 +158,26 @@ public class PlayerManager : MonoBehaviour
 
         //Add iFrames and timer
         invincibilityTimer = invincibilityTime;
+    }
+
+    public void checkForInteraction()
+    {
+        Collider2D[] interactableStationColliders = Physics2D.OverlapCircleAll((Vector2)transform.position, stationInteractionRadius, stationInteractionMask);
+
+        //Check if there's nothing around the player
+        if (interactableStationColliders.Length == 0)
+        {
+            return;
+        }
+
+        foreach (Collider2D col in interactableStationColliders)
+        {
+            if (col.gameObject.tag == "Crockpot")
+            {
+                col.GetComponent<CrockPotBehavior>().openCrockpot();
+                playerInventoryManager.openInventoryPanel();
+                currentInteractionObject = col.gameObject;
+            }
+        }
     }
 }
