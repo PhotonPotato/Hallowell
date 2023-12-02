@@ -26,16 +26,22 @@ public class InventoryUIManager : MonoBehaviour
     public bool inventoryPanelOpen = false;
     [System.NonSerialized] public bool crockpotPanelOpen = false;
 
+    Vector3 defaultHealthBarPos;
+
     void Start()
     {
         //materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
         playerInventory = new PlayerInventory(this);
         playerMan = FindObjectOfType<PlayerManager>();
+
+        defaultHealthBarPos = playerMan.healthBarSlider.gameObject.transform.position;
     }
 
     void Update()
     {
         itemDetectionHandler();
+
+        playerMan.healthBarSlider.gameObject.transform.position = Camera.main.WorldToScreenPoint(Vector3.Scale(Camera.main.ScreenToWorldPoint(defaultHealthBarPos), new Vector3(1, inventoryPanelOpen ? -1 : 1, 1)));
     }
 
     public void openInventoryPanel()
@@ -47,6 +53,8 @@ public class InventoryUIManager : MonoBehaviour
         hotBarPanel.SetActive(false);
 
         inventoryPanelOpen = true;
+
+        //Move health bar down to not block items
     }
 
     public void closeInventoryPanel()
@@ -60,6 +68,9 @@ public class InventoryUIManager : MonoBehaviour
         inventoryPanelOpen = false;
 
         mouseMan.OnInventoryClose();
+
+        //Return health bar to original position
+
     }
 
     public void refreshMaterialInventory()
