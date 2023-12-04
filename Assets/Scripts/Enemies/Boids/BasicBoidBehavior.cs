@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static BasicBoidBehavior;
 
 public class BasicBoidBehavior : MonoBehaviour
 {
@@ -10,6 +11,9 @@ public class BasicBoidBehavior : MonoBehaviour
         public Vector2 position;
         public Vector2 velocity;
         public GameObject obj;
+
+        public int targetJointIndex;
+        public Vector2 targetPos;
 
         public void updatePos()
         {
@@ -25,6 +29,7 @@ public class BasicBoidBehavior : MonoBehaviour
 
     [Header("Settings")]
     public int numBoids;
+    public Transform BoidParent;
     public Vector2 spawnBounds;
     public float maxBoidVelocity = 8;
     public float initialMaximumVelocity = 30;
@@ -33,6 +38,13 @@ public class BasicBoidBehavior : MonoBehaviour
     public float mergeRadius = 5;
     public float matchVelRadius = 1;
     public float avoidDist = 10;
+
+    [Space]
+    //Joint implementation
+    GameObject[] joints;
+    public Transform JointParent;
+    public float jointReachedDist = 1;
+    public int numJoints = 2;
 
     [Space]
     public float MergeRuleWeight = 1;
@@ -58,12 +70,13 @@ public class BasicBoidBehavior : MonoBehaviour
 
     private void Start()
     {
+        initializeJoints();
         initializeBoids();
     }
 
     private void Update()
     {
-        if (Input.GetMouseButton(0)) targetPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        //if (Input.GetMouseButton(0)) targetPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         updateBoids();
     }
 
@@ -78,6 +91,27 @@ public class BasicBoidBehavior : MonoBehaviour
 
             boids[i].position = new Vector2(Random.Range(spawnBounds.x * -1, spawnBounds.x), Random.Range(spawnBounds.y * -1, spawnBounds.y));
             boids[i].velocity = new Vector2(Random.Range(initialMaximumVelocity, initialMaximumVelocity * -1), Random.Range(initialMaximumVelocity, initialMaximumVelocity * -1));
+
+            //Init the joint type ting
+            boids[i].targetJointIndex = Random.Range(0, numJoints);
+            boids[i].targetPos = joints[boids[i].targetJointIndex].transform.position;
+
+            boids[i].obj.transform.SetParent(BoidParent);
+        }
+    }
+
+    public void initializeJoints()
+    {
+        joints = new GameObject[numJoints];
+
+        for (int i = 0; i < numJoints; i++)
+        {
+            GameObject obj = new GameObject("Joint " + i);
+
+            obj.transform.SetParent(JointParent);
+            obj.transform.position += new Vector3(i * 4, 0, 0);
+
+            joints[i] = obj;
         }
     }
 
@@ -90,7 +124,7 @@ public class BasicBoidBehavior : MonoBehaviour
             //Test optimization
             optimizedAllInOne(boids[i]);
 
-            targetPointVel = (boids[i].position - targetPos);
+            targetPointVel = (boids[i].position - boids[i].targetPos);
 
             //Apply the 3 rules
             newVelocity += mergeVel * MergeRuleWeight;//MergeToCenterOfFlock(boids[i]) * MergeRuleWeight;
@@ -113,6 +147,19 @@ public class BasicBoidBehavior : MonoBehaviour
             //Update actual object transform
             boids[i].updatePos();
             boids[i].updateRot();
+
+            //Update boids search for new pos
+            if (Mathf.Abs(Vector2.Distance(boids[i].position, boids[i].targetPos)) <= jointReachedDist)
+            {
+                //Choose randome joint to follow
+                //boids[i].targetJointIndex = Random.Range(0, numJoints);
+
+                //Alternate: increasing or decreasing joint index by one so that they dont just move aimlessly.
+                boids[i].targetJointIndex += Random.Range(0, 2) == 1 ? 1 : -1;
+                boids[i].targetJointIndex = Mathf.Clamp(boids[i].targetJointIndex, 0, numJoints - 1);
+
+                boids[i].targetPos = joints[boids[i].targetJointIndex].transform.position;
+            }
         }
     }
     public void optimizedAllInOne(Boid bInit)

@@ -26,15 +26,15 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: numBoids
-    value: 150
+    value: 200
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: spawnBounds.x
-    value: 100
+    value: 200
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: spawnBounds.y
-    value: 50
+    value: 100
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: maxBoidVelocity

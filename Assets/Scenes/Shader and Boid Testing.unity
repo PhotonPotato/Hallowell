@@ -153,15 +153,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numBoids: 150
-  spawnBounds: {x: 46, y: 30}
+  spawnBounds: {x: 100, y: 50}
   maxBoidVelocity: 30
   initialMaximumVelocity: 30
-  mergeRadius: 4
+  mergeRadius: 6
   matchVelRadius: 2
   avoidDist: 5
-  MergeRuleWeight: 0.24
-  NearbyVelRuleWeight: 0.3
-  AvoidRuleWeight: 0.4
+  MergeRuleWeight: 4
+  NearbyVelRuleWeight: 2
+  AvoidRuleWeight: 1
+  TargetPointInfluence: 0.04
+  targetPos: {x: 0, y: 0}
   boidPrefab: {fileID: 5488287622952700574, guid: 98b4c6ecceff24840a3d3452f33c13ac, type: 3}
 --- !u!4 &144530747
 Transform:
@@ -214,8 +216,8 @@ Camera:
   m_GameObject: {fileID: 567465355}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.1792453, g: 0.1792453, b: 0.1792453, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
