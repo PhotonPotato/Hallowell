@@ -14,5 +14,6 @@ d - Very high level title/description
 t - Type of version
     - Nothing = default
     - a = alpha (incomplete inmplementation)
+        - # = commit number
     - b = Version with build
     - t = testing version (prototyping new ideas or otherwise loosely project related activities)

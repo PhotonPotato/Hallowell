@@ -13,7 +13,6 @@ public class BasicBoidBehavior : MonoBehaviour
         public GameObject obj;
 
         public int targetJointIndex;
-        public Vector2 targetPos;
 
         public void updatePos()
         {
@@ -28,6 +27,7 @@ public class BasicBoidBehavior : MonoBehaviour
     }
 
     [Header("Settings")]
+    public bool followProceduralAnimation;
     public int numBoids;
     public Transform BoidParent;
     public Vector2 spawnBounds;
@@ -41,7 +41,7 @@ public class BasicBoidBehavior : MonoBehaviour
 
     [Space]
     //Joint implementation
-    GameObject[] joints;
+    public GameObject[] joints;
     public Transform JointParent;
     public float jointReachedDist = 1;
     public int numJoints = 2;
@@ -94,8 +94,7 @@ public class BasicBoidBehavior : MonoBehaviour
 
             //Init the joint type ting
             boids[i].targetJointIndex = Random.Range(0, numJoints);
-            boids[i].targetPos = joints[boids[i].targetJointIndex].transform.position;
-
+            
             boids[i].obj.transform.SetParent(BoidParent);
         }
     }
@@ -124,7 +123,7 @@ public class BasicBoidBehavior : MonoBehaviour
             //Test optimization
             optimizedAllInOne(boids[i]);
 
-            targetPointVel = (boids[i].position - boids[i].targetPos);
+            targetPointVel = (boids[i].position - (Vector2) joints[boids[i].targetJointIndex].transform.position);
 
             //Apply the 3 rules
             newVelocity += mergeVel * MergeRuleWeight;//MergeToCenterOfFlock(boids[i]) * MergeRuleWeight;
@@ -149,7 +148,7 @@ public class BasicBoidBehavior : MonoBehaviour
             boids[i].updateRot();
 
             //Update boids search for new pos
-            if (Mathf.Abs(Vector2.Distance(boids[i].position, boids[i].targetPos)) <= jointReachedDist)
+            if (Mathf.Abs(Vector2.Distance(boids[i].position, joints[boids[i].targetJointIndex].transform.position)) <= jointReachedDist)
             {
                 //Choose randome joint to follow
                 //boids[i].targetJointIndex = Random.Range(0, numJoints);
@@ -157,8 +156,6 @@ public class BasicBoidBehavior : MonoBehaviour
                 //Alternate: increasing or decreasing joint index by one so that they dont just move aimlessly.
                 boids[i].targetJointIndex += Random.Range(0, 2) == 1 ? 1 : -1;
                 boids[i].targetJointIndex = Mathf.Clamp(boids[i].targetJointIndex, 0, numJoints - 1);
-
-                boids[i].targetPos = joints[boids[i].targetJointIndex].transform.position;
             }
         }
     }
@@ -205,16 +202,11 @@ public class BasicBoidBehavior : MonoBehaviour
                 mergeVel = (mergeVel / i);// - bInit.position;
             }
 
-            //mergeVel =  (i == 0) ? Vector2.zero : mergeVel / i;
-            //mergeVel -= bInit.position;
-
             if (j == 0) alignVel = Vector2.zero;
             else
             {
                 alignVel = (alignVel / j);// - bInit.velocity;
             }
-
-            //alignVel -= bInit.velocity;
         }
     }
 
