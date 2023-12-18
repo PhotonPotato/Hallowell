@@ -1,13 +1,89 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class ProceduralQuadropedAnimation : MonoBehaviour
 {
+    public class LegObject
+    {
+        public LineRenderer legRender;
+
+        public Vector3[] LegPoints;
+        public Vector3 targetPos;
+        Vector3 lastMovePos;
+        public Vector3 currentPos;
+
+        public float timeOfLastMove = 0;
+        public bool movingLeg = false;
+
+        public int numJoints;
+        public int id;
+
+        public float legYOffset = 1.5f;
+        public float legMoveSpeedTimePerUnit = .4f;
+
+        public float maxDist = 2.4f;
+
+        public float distanceToNextTarget = 0;
+
+        public LegObject(int id, int numJoints, float legYOffset = 1.5f, float legMoveSpeedTimePerUnit = .4f)
+        {
+            this.id = id;
+            this.numJoints = numJoints;
+
+            this.legYOffset = legYOffset;
+            this.legMoveSpeedTimePerUnit = legMoveSpeedTimePerUnit;
+
+            LegPoints = new Vector3[numJoints];
+        }
+
+        public int getLength()
+        {
+            return numJoints;
+        }
+
+        public float checkDistanceToNextTarget(Vector3 raycastedNewPos)
+        {
+            distanceToNextTarget = Vector3.Distance(raycastedNewPos, currentPos);
+            return distanceToNextTarget;
+        }
+
+        public void setNewLegMove(Vector3 newPos)
+        {
+            targetPos = newPos;
+            timeOfLastMove = Time.time;
+            lastMovePos = currentPos;
+
+            movingLeg = true;
+        }
+
+        public void updateLeg()
+        {
+            if (!movingLeg) return;
+
+            float t = (Time.time - this.timeOfLastMove) / legMoveSpeedTimePerUnit;
+
+            if (t >= 1)
+            {
+                movingLeg = false;
+
+                return;
+            }
+
+            Vector3 newPos = Vector3.Lerp(lastMovePos, targetPos, t);
+
+            newPos.y += Mathf.Sin(t * Mathf.PI) * legYOffset;
+
+            currentPos = newPos;
+        }
+    }
+
     [Header("References")]
-    public Transform targetPoint;
+    public Transform[] targetPoints;
     Vector3 raycastedNewPos;
-    public LineRenderer Leg;
+    public GameObject LegRendererBin;
+    public LineRenderer[] LegRederers;
 
     public GameObject FootPlaceholder;
 
@@ -15,17 +91,20 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     Vector3 lastMovePos;
 
     [Header("Settings")]
+    public int numLegs = 1;
 
-
-    public float maxDist;
+    public float maxDist = 2.4f;
+    public float maxRestDist = 1f;
     public bool movingLeg = false;
     public float timeOfLastMove = 0;
     public float legmoveSpeedTimePerUnit = .4f;
 
-    public float lefYOffset;
+    public float legYOffset;
 
     [Header("Inverse Kinematics Settings")]
-    public Vector3[] LegPoints;
+    public LegObject[] LegObjects;
+
+    //public Vector3[,] LegPoints;
 
     public int legLength = 3;
     public float boneLength = 1.5f;
@@ -34,46 +113,98 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     public int iterations = 30;
     public float Delta = .04f;
 
+    public Vector3 IKBias;
+
     [Header("Boids")]
     public bool useBoids = false;
-    public BasicBoidBehavior boidBehaviorScript;
+    public GameObject boidManager;
+    public BasicBoidBehavior[] boidBehaviorScripts;
+
+    public int numLegsNeededOnGround = 3;
+
+    //Other internal vars
+    public int numLegsOnGround = 0;
 
     private void Start()
     {
+        //LegRederers = LegRendererBin.GetComponentsInChildren<LineRenderer>();
+        initLegs();
         completeLength = boneLength * legLength;
 
-        LegPoints = new Vector3[legLength];
-
         //Set bones
-        boidBehaviorScript.numJoints = legLength;
+        for (int i = 0; i < numLegs; i++)
+        {
+            //boidBehaviorScripts[i] = boidManager.AddComponent<BasicBoidBehavior>();
+
+            boidBehaviorScripts[i].numJoints = legLength;
+        }
+        
     }
 
     public void Update()
     {
-        raycastedNewPos = getNewTargetPos();
+        transform.position = new(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0);
 
-        if (checkDistToNextTarget() && !movingLeg)
+        int furthestLegFromTarget = 0;
+
+        numLegsOnGround = 0;
+        for (int i = 0; i < numLegs; i++)
         {
-            //Check if other legs are on ground later.
-            movingLeg = true;
-            newTargetPos = raycastedNewPos;
-            lastMovePos = FootPlaceholder.transform.position;
-            timeOfLastMove = Time.time;
+            if (!LegObjects[i].movingLeg)
+            {
+                numLegsOnGround++;
+            }
+
+            raycastedNewPos = getNewTargetPosFromPoint(targetPoints[i].position);
+            //SUPER UGLY IMPLEMENTATION, FIX LATER
+            LegObjects[i].targetPos = raycastedNewPos;
+
+            if (LegObjects[i].checkDistanceToNextTarget(raycastedNewPos) + Vector3.Distance(LegObjects[i].currentPos, transform.position)
+               >= LegObjects[furthestLegFromTarget].distanceToNextTarget + Vector3.Distance(LegObjects[furthestLegFromTarget].currentPos, transform.position))
+            {
+                furthestLegFromTarget = i;
+            }
+        }
+        print(furthestLegFromTarget);
+
+        //Start iterating on the most distant leg
+        //for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++)
+        int[] orderOfIteration = getRandomizedIndicies(numLegs);
+
+        Debug.Log(orderOfIteration[0] + " " + orderOfIteration[1] + " " + orderOfIteration[2] + " " + orderOfIteration[3]);
+
+        for (int i = 0; i < numLegs; i++)
+        {
+            int index = orderOfIteration[i];
+            //if (index >= numLegs) index -= numLegs;
+
+            if (LegObjects[index].distanceToNextTarget >= maxDist && !LegObjects[index].movingLeg && numLegsOnGround > numLegsNeededOnGround)
+            {
+                LegObjects[index].setNewLegMove(LegObjects[index].targetPos);
+                numLegsOnGround--;
+            }
+
+            LegObjects[index].updateLeg();
+
+            moveBones(index);
+            updateLegIK(index);
         }
 
-        if (movingLeg == true)
+        if (numLegsOnGround == numLegs && LegObjects[furthestLegFromTarget].distanceToNextTarget >= maxRestDist)
         {
-            moveLeg();
+            LegObjects[furthestLegFromTarget].setNewLegMove(LegObjects[furthestLegFromTarget].targetPos);
+            numLegsOnGround--;
         }
-
-        moveBones();
-        updateLegIK();
 
         //Boid shit
         if (!useBoids) return;
-        for (int i = 0; i < legLength; i++)
+        for (int i = 0; i < numLegs; i++)
         {
-            boidBehaviorScript.joints[i].transform.position = LegPoints[i];
+            for (int j = 0; j < legLength; j++)
+            {
+                boidBehaviorScripts[i].joints[j].transform.position = LegObjects[i].LegPoints[j];
+
+            }
         }
     }
 
@@ -86,9 +217,9 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         return dist;
     }
 
-    public Vector3 getNewTargetPos()
+    public Vector3 getNewTargetPosFromPoint(Vector3 point)
     {
-        RaycastHit2D ray = Physics2D.Raycast(targetPoint.position, Vector2.down, 10);
+        RaycastHit2D ray = Physics2D.Raycast(point, Vector2.down, 100, LayerMask.GetMask("Ground"));
 
         return ray.point;
     }
@@ -106,7 +237,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         Vector3 newPos = Vector3.Lerp(lastMovePos, newTargetPos, t);
 
-        newPos.y += Mathf.Sin(t * Mathf.PI) * lefYOffset;
+        newPos.y += Mathf.Sin(t * Mathf.PI) * legYOffset;
 
         FootPlaceholder.transform.position = newPos;
     }
@@ -117,62 +248,112 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     public void OnDrawGizmos()
     {
         var current = this.transform;
-
+        
 
     }
 
-    public void updateLegIK()
+    public void updateLegIK(int legIndex)
     {
-        Leg.positionCount = legLength;
+        LegObjects[legIndex].legRender.positionCount = LegObjects[legIndex].numJoints;
 
-        for (int i = 0; i < LegPoints.Length; i++)
+        for (int i = 0; i < LegObjects[legIndex].LegPoints.Length; i++)
         {
-            Leg.SetPosition(i, LegPoints[i]);
+            LegObjects[legIndex].legRender.SetPosition(i, LegObjects[legIndex].LegPoints[i]);
         }
     }
 
-    public void moveBones()
+    public void initLegs()
     {
-        Vector3 currentTargetPos = FootPlaceholder.transform.position;
+        LegObjects = new LegObject[numLegs];
 
-        LegPoints[0] = transform.position;
-        LegPoints[LegPoints.Length - 1] = currentTargetPos;
-
-        if ((currentTargetPos - LegPoints[0]).sqrMagnitude >= completeLength * completeLength)
+        for (int i = 0; i < numLegs; i++)
         {
-            Vector2 direction = (currentTargetPos - LegPoints[0]).normalized;
+            LegObjects[i] = new LegObject(i, legLength, legYOffset, legmoveSpeedTimePerUnit);
 
-            for (int i = 1; i < LegPoints.Length; i++)
+            LegObjects[i].legRender = LegRendererBin.GetComponentsInChildren<LineRenderer>()[i];
+        }
+    }
+
+    public void moveBones(int legIndex)
+    {
+        LegObject currentLeg = LegObjects[legIndex];
+        Vector3 currentTargetPos = currentLeg.currentPos;
+        int currentLegLength = currentLeg.LegPoints.Length;
+
+        currentLeg.LegPoints[0] = transform.position;
+        currentLeg.LegPoints[currentLegLength - 1] = currentTargetPos;
+
+        //Try to add a bias
+
+        if ((currentTargetPos - currentLeg.LegPoints[0]).sqrMagnitude >= completeLength * completeLength)
+        {
+            Vector2 direction = (currentTargetPos - currentLeg.LegPoints[0]).normalized;
+
+            for (int i = 1; i < currentLegLength; i++)
             {
-                LegPoints[i] = LegPoints[i - 1] + (Vector3) direction * boneLength;
+                currentLeg.LegPoints[i] = currentLeg.LegPoints[i - 1] + (Vector3) direction * boneLength;
             }
         }
         else
         {
             for (int j = 0; j < iterations; j++)
             {
-                for (int k = LegPoints.Length - 1; k > 0; k--)
+                for (int k = currentLegLength - 1; k > 0; k--)
                 {
-                    if (k == LegPoints.Length - 1)
+                    if (k == currentLegLength - 1)
                     {
-                        LegPoints[k] = currentTargetPos;
+                        currentLeg.LegPoints[k] = currentTargetPos;
                     }
                     else
                     {
-                        LegPoints[k] = LegPoints[k + 1] + (LegPoints[k] - LegPoints[k + 1]).normalized * boneLength;
+                        currentLeg.LegPoints[k] = currentLeg.LegPoints[k + 1] + (currentLeg.LegPoints[k] - currentLeg.LegPoints[k + 1]).normalized * boneLength;
                     }
                 }
 
-                for (int i = 1; i < LegPoints.Length; i++)
+                for (int i = 1; i < currentLegLength; i++)
                 {
-                    LegPoints[i] = LegPoints[i - 1] + (LegPoints[i] - LegPoints[i - 1]).normalized * boneLength;
+                    currentLeg.LegPoints[i] = currentLeg.LegPoints[i - 1] + (currentLeg.LegPoints[i] - currentLeg.LegPoints[i - 1]).normalized * boneLength;
+                    if (i != currentLegLength - 1) currentLeg.LegPoints[i] += IKBias;
                 }
 
-                if ((LegPoints[LegPoints.Length - 1] - currentTargetPos).sqrMagnitude <= Delta * Delta)
+                if ((currentLeg.LegPoints[currentLegLength - 1] - currentTargetPos).sqrMagnitude <= Delta * Delta)
                 {
                     break;  
                 }
             }
+        }
+
+        currentLeg.LegPoints[currentLegLength - 1] = currentTargetPos;
+    }
+
+    public int[] getRandomizedIndicies(int range)
+    {
+        int[] output = new int[range];
+
+        //Fill array with abriritrary large value
+        Array.Fill<int>(output, 999);
+
+        for (int i = 0; i < range; i++)
+        {
+            output[i] = getNewNum(UnityEngine.Random.Range(0, range), output, range, 100);
+        }
+        
+        return output;
+    }
+
+    public int getNewNum(int a, int[] input, int len, int lim)
+    {
+        if (lim == 0)
+        {
+            return a;
+        }
+        if (Array.IndexOf(input, a) == -1)
+        {
+            return a;
+        }
+        else
+        {
+            return getNewNum(UnityEngine.Random.Range(0, len), input, len, lim - 1);
         }
     }
 }

@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static BasicBoidBehavior;
 
 public class BasicBoidBehavior : MonoBehaviour
 {
@@ -57,7 +56,7 @@ public class BasicBoidBehavior : MonoBehaviour
 
     [Header("Prefabs")]
     public GameObject boidPrefab;
-
+    
     [Header("Dynamic Array")]
     [SerializeField] public Boid[] boids;
 
@@ -119,7 +118,7 @@ public class BasicBoidBehavior : MonoBehaviour
         for (int i = 0; i < numBoids; i++)
         {
             Vector2 newVelocity = boids[i].velocity;
-
+            
             //Test optimization
             optimizedAllInOne(boids[i]);
 
