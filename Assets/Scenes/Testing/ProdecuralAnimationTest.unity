@@ -606,6 +606,8 @@ MonoBehaviour:
   timeOfLastMove: 0
   legmoveSpeedTimePerUnit: 0.3
   legYOffset: 2
+  averageBodyHeight: 1.98
+  bodyMoveSpeed: 4
   legLength: 4
   boneLength: 1.35
   completeLength: 0

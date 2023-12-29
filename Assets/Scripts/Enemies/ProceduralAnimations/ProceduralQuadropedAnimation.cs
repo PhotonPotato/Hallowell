@@ -104,6 +104,9 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     [Header("Inverse Kinematics Settings")]
     public LegObject[] LegObjects;
 
+    public float averageBodyHeight = 5f;
+    public float bodyMoveSpeed = 4f;
+
     //public Vector3[,] LegPoints;
 
     public int legLength = 3;
@@ -143,7 +146,18 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
     public void Update()
     {
-        transform.position = new(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0);
+        //Update body position
+        Vector3 newPos = transform.position;
+
+        //Made in desmos
+        float distanceFalloffMultiplier = -1 * Mathf.Pow(.5f, Mathf.Abs(transform.position.x - Camera.main.ScreenToWorldPoint(Input.mousePosition).x)) + 1;
+
+        newPos.x += bodyMoveSpeed * Mathf.Sign(Camera.main.ScreenToWorldPoint(Input.mousePosition).x - transform.position.x) * distanceFalloffMultiplier * Time.deltaTime;
+        newPos.y += (calculateBodyHeight() - newPos.y) / 100;
+
+        transform.position = newPos;
+
+        //transform.position = new(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0);
 
         int furthestLegFromTarget = 0;
 
@@ -355,5 +369,25 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         {
             return getNewNum(UnityEngine.Random.Range(0, len), input, len, lim - 1);
         }
+    }
+
+    public float calculateBodyHeight()
+    {
+        float averageLegHeight = 0;
+        int numLegsInCalculation = 0;
+
+        foreach (LegObject legObject in this.LegObjects) 
+        {
+            if (!legObject.movingLeg)
+            {
+                numLegsInCalculation++;
+
+                averageLegHeight += legObject.currentPos.y;
+            }
+        }
+
+        averageLegHeight /= numLegsInCalculation;
+
+        return averageLegHeight + averageBodyHeight;
     }
 }
