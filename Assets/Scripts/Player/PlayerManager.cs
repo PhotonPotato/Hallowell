@@ -1,21 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 public class PlayerManager : MonoBehaviour
 {
     //Script attached to player character
     public PlayerMovementScript playerMovement;
+    public PlayerCombatScript playerCombat;
     public PlayerCameraController playerCameraController;
-    InventoryUIManager playerInventoryManager;
+    [NonSerialized] public InventoryUIManager playerInventoryManager;
 
     Rigidbody2D rb;
 
     public float invincibilityTimer = 0;
     public float invincibilityTime;
 
-    [System.NonSerialized]
+    [NonSerialized]
     public playerHealthContainer playerHealth;
 
     //Effects
@@ -31,7 +31,10 @@ public class PlayerManager : MonoBehaviour
     public float stationInteractionRadius = 5;
     public LayerMask stationInteractionMask;
 
-    [System.NonSerialized] public GameObject currentInteractionObject;
+    [NonSerialized] public GameObject currentInteractionObject;
+
+    [NonSerialized] public bool playerFacingRight;
+    public GameObject weaponPositionParent;
 
     void Start()
     {
@@ -119,6 +122,9 @@ public class PlayerManager : MonoBehaviour
                 openCrockPot.GetComponent<CrockPotBehavior>().closeCrockPot(false);
             }
         }
+
+        //Update weapon orientation
+        weaponPositionParent.transform.rotation = playerFacingRight ? Quaternion.identity : Quaternion.Euler(0, 180, 0);
     }
 
     public void initializeHealthBar()
@@ -175,7 +181,7 @@ public class PlayerManager : MonoBehaviour
             if (col.gameObject.tag == "Crockpot")
             {
                 col.GetComponent<CrockPotBehavior>().openCrockpot();
-                playerInventoryManager.openInventoryPanel();
+                playerInventoryManager.OpenInventoryPanel();
                 currentInteractionObject = col.gameObject;
             }
         }

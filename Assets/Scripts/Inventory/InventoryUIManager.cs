@@ -39,15 +39,15 @@ public class InventoryUIManager : MonoBehaviour
 
     void Update()
     {
-        itemDetectionHandler();
+        ItemDetectionHandler();
 
         playerMan.healthBarSlider.gameObject.transform.position = Camera.main.WorldToScreenPoint(Vector3.Scale(Camera.main.ScreenToWorldPoint(defaultHealthBarPos), new Vector3(1, inventoryPanelOpen ? -1 : 1, 1)));
     }
 
-    public void openInventoryPanel()
+    public void OpenInventoryPanel()
     {
         Debug.Log("received signal");
-        refreshMaterialInventory();
+        RefreshMaterialInventory();
 
         InventoryPanel.SetActive(true);
         hotBarPanel.SetActive(false);
@@ -57,7 +57,7 @@ public class InventoryUIManager : MonoBehaviour
         //Move health bar down to not block items
     }
 
-    public void closeInventoryPanel()
+    public void CloseInventoryPanel()
     {
         InventoryPanel.SetActive(false);
         hotBarPanel.SetActive(true);
@@ -73,14 +73,14 @@ public class InventoryUIManager : MonoBehaviour
 
     }
 
-    public void refreshMaterialInventory()
+    public void RefreshMaterialInventory()
     {
         materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
 
         Debug.Log("Len: " + materialItemSlots.Length + " player shitter: " + playerInventory.playerMaterialInventory.Count);
 
         //Check for the correct amount of slots.
-        for (int i = getSlotsLength(); i < playerInventory.playerMaterialInventory.Count; i++)
+        for (int i = GetSlotsLength(); i < playerInventory.playerMaterialInventory.Count; i++)
         {
             GameObject obj = Instantiate(InventorySlotObject, inventorySlotsParent);
 
@@ -92,20 +92,20 @@ public class InventoryUIManager : MonoBehaviour
         materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
     }
 
-    public void updateMaterialInventorySlots()
+    public void UpdateMaterialInventorySlots()
     {
-        for (int i = 0; i < getSlotsLength(); i++)
+        for (int i = 0; i < GetSlotsLength(); i++)
         {
             materialItemSlots[i].AddIcon(playerInventory.playerMaterialInventory[i].getDeepCopy());
         }
     }
 
-    public int getSlotsLength()
+    public int GetSlotsLength()
     {
         return materialItemSlots.Length;
     }
 
-    public void itemDetectionHandler()
+    public void ItemDetectionHandler()
     {
         //Make items drift towards you in a certain radius.
         Collider2D[] itemsInAttraction = Physics2D.OverlapCircleAll(playerPos.position, attractionRadius, itemLayer);
@@ -137,16 +137,16 @@ public class InventoryUIManager : MonoBehaviour
         foreach(Collider2D col in itemsInRadius)
         {
             //Filter for objects of the right tag
-            if (col.gameObject.tag == "CollectableMaterialItem")
+            if (col.gameObject.CompareTag("CollectableMaterialItem"))
             {
                 //Add item to inventory list
                 playerInventory.addItem(col.gameObject.GetComponent<MaterialItemSlot>().getItem());
 
                 //Refresh the inventory so that the list of material item slots is updated.
-                refreshMaterialInventory();
+                RefreshMaterialInventory();
 
                 //Updates the icons and data of the actual gameObjects
-                updateMaterialInventorySlots();
+                UpdateMaterialInventorySlots();
 
                 //Destroys the Collectable item
                 Destroy(col.gameObject);

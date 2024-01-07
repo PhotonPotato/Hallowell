@@ -253,12 +253,14 @@ public class PlayerMovementScript : MonoBehaviour
             //Moving right
             //Face character right.
             playerRenderer.flipX = false;
+            playerManager.playerFacingRight = true;
         }
         else if (xVel < 0)
         {
             //Moving left
             //Face character left.
             playerRenderer.flipX = true;
+            playerManager.playerFacingRight = false;
         }
         else
         {

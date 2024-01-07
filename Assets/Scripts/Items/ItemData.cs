@@ -6,7 +6,7 @@ using UnityEngine;
 public class ItemData : ScriptableObject
 {
     public string itemName;
-    public int itemType;
+    public ItemType itemType;
     public Sprite itemIcon;
     public int id;
     public int quantity;
@@ -19,7 +19,7 @@ public class ItemData : ScriptableObject
         return itemName;
     }
 
-    public int getItemType()
+    public ItemType getItemType()
     {
         return itemType;
     }

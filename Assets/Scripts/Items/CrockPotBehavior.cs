@@ -205,7 +205,7 @@ public class CrockPotBehavior : MonoBehaviour
 
         openButtonObject.SetActive(false);
 
-        if (openInventoryPanel) playerInventoryUIMan.openInventoryPanel();
+        if (openInventoryPanel) playerInventoryUIMan.OpenInventoryPanel();
         playerInventoryUIMan.crockpotPanelOpen = true;
         FindObjectOfType<PlayerManager>().currentInteractionObject = this.gameObject;
 
@@ -233,14 +233,14 @@ public class CrockPotBehavior : MonoBehaviour
             outputItemSlot.ClearSlot(false);
         }
 
-        playerInventoryUIMan.refreshMaterialInventory();
-        playerInventoryUIMan.updateMaterialInventorySlots();
+        playerInventoryUIMan.RefreshMaterialInventory();
+        playerInventoryUIMan.UpdateMaterialInventorySlots();
 
         crockpotUIParent.SetActive(false);
 
         openButtonObject.SetActive(true);
 
-        if (closeInventoryPanel) playerInventoryUIMan.closeInventoryPanel();
+        if (closeInventoryPanel) playerInventoryUIMan.CloseInventoryPanel();
         playerInventoryUIMan.crockpotPanelOpen = false;
 
         //Play sound/animation for polish

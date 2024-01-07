@@ -134,7 +134,7 @@ public class InventoryMouseManager : MonoBehaviour
                         Destroy(slot.gameObject);
 
                         //Update variables and slot displays
-                        UIMan.refreshMaterialInventory();
+                        UIMan.RefreshMaterialInventory();
 
                         //Create a new array deleting this item out of the material item slot array
                         MaterialItemSlot[] editedMaterialItemSlotArray = new MaterialItemSlot[UIMan.materialItemSlots.Length - 1];
@@ -234,8 +234,8 @@ public class InventoryMouseManager : MonoBehaviour
             Debug.Log("yes");
             UIMan.playerInventory.addItem(mouseItemContainer.item);
 
-            UIMan.refreshMaterialInventory();
-            UIMan.updateMaterialInventorySlots();
+            UIMan.RefreshMaterialInventory();
+            UIMan.UpdateMaterialInventorySlots();
 
             //Reset the container
             mouseItemContainer.ClearSlot(false);
@@ -249,8 +249,8 @@ public class InventoryMouseManager : MonoBehaviour
         {
             UIMan.playerInventory.addItem(mouseItemContainer.item);
 
-            UIMan.refreshMaterialInventory();
-            UIMan.updateMaterialInventorySlots();
+            UIMan.RefreshMaterialInventory();
+            UIMan.UpdateMaterialInventorySlots();
 
             //Reset the container
             mouseItemContainer.ClearSlot(false);
