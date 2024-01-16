@@ -16,12 +16,22 @@ public class InventoryMouseManager : MonoBehaviour
     bool onCrockpotSlot = false;
     //For slots that cannot have things placed in but only taken
     public bool onOutputSlot = false;
-    GameObject closestSlot;
+    public GameObject closestSlot;
+    ItemData selectedItemData;
 
     public bool mouseContainerFull = false;
     public MaterialItemSlot mouseItemContainer;
     public Image mouseContainerImage;
     public GameObject dragBackButtonObject;
+
+    [Space]
+    public GameObject itemActionMenuParent;
+    public GameObject verticalStack;
+    public Vector2 itemActionMenuOffset;
+    public bool itemActionMenuOpen = false;
+    //miight wanna not do this fix later
+    float itemActionMenuHideDelay = .1f;
+    float timeActionMenuClosed = Mathf.NegativeInfinity;
 
     private void Start()
     {
@@ -58,7 +68,14 @@ public class InventoryMouseManager : MonoBehaviour
             mouseLine.SetPositions(positions);
         }
 
-        //Look for clicks on the inventory objects
+        //Look for closing action menu
+        if (Input.GetMouseButtonDown(0) && itemActionMenuOpen)
+        {
+            itemActionMenuOpen = false;
+            timeActionMenuClosed = Time.time;
+        }
+
+        //Look for left clicks on the inventory objects
         if (onSlot && Input.GetMouseButtonDown(0))
         {
             /* REMOVE
@@ -156,6 +173,46 @@ public class InventoryMouseManager : MonoBehaviour
                 mouseContainerFull = true;
             }
         }
+
+        //Look for right click on inventory objects
+        if (onSlot && Input.GetMouseButtonDown(1))
+        {
+            //Get item data
+            selectedItemData = closestSlot.GetComponentInParent<MaterialItemSlot>().getItem();
+
+            if (selectedItemData != null)
+            {
+                //Analyze for action menu
+                verticalStack.SetActive(true);
+
+                //Hide all the children
+                foreach (Transform child in verticalStack.transform)
+                {
+                    child.gameObject.SetActive(false);
+                }
+
+                //Show the drop button because its an item
+                Button[] verticalStackComponents = verticalStack.GetComponentsInChildren<Button>();
+
+                Debug.Log(verticalStack.transform.childCount);
+
+                verticalStack.transform.GetChild(0).gameObject.SetActive(true);
+
+                switch (selectedItemData.getItemType())
+                {
+                    case ItemType.HealthItem:
+                        verticalStack.transform.GetChild(1).gameObject.SetActive(true);
+                        break;
+                }
+
+                //Display itemActionMenu
+                itemActionMenuParent.transform.position = closestSlot.transform.position + (Vector3)itemActionMenuOffset;
+                itemActionMenuOpen = true;
+            }
+        }
+
+        //Update visiility of menus
+        itemActionMenuParent.SetActive(Time.time - timeActionMenuClosed > itemActionMenuHideDelay & !itemActionMenuOpen ? false : true);
     }
 
 
@@ -256,5 +313,18 @@ public class InventoryMouseManager : MonoBehaviour
             mouseItemContainer.ClearSlot(false);
             mouseContainerFull = false;
         }
+    }
+
+    public void ItemActionHandlerHealPressed()
+    {
+        Debug.Log("healing: " + (selectedItemData as MaterialItem).healthPointsHealed);
+        UIMan.playerMan.HealPlayer((selectedItemData as MaterialItem).healthPointsHealed);
+        UIMan.RemoveInventorySlot(closestSlot.transform.parent.GetSiblingIndex());
+    }
+
+    public void ItemActionHandlerDropPressed()
+    {
+        //FIX THIS PLEASE (TOO MCUH CASTING)
+        UIMan.DropItemAsPickup(selectedItemData as MaterialItem, closestSlot.transform.parent.GetSiblingIndex());
     }
 }

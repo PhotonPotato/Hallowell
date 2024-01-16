@@ -22,5 +22,7 @@ MonoBehaviour:
   empty: 0
   spritePrefab: {fileID: 2630371545628464971, guid: ee4d6d98195e50441a03ce2b0eac28ff, type: 3}
   isUnarmed: 0
+  attackRange: 2
+  baseAttackDamage: 15
   WeaponTags: 
   WeaponAttacks: 00000000

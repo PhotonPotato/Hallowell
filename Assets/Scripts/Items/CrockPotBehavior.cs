@@ -185,7 +185,7 @@ public class CrockPotBehavior : MonoBehaviour
         if (compareToRecipe(testRecipe))
         {
             Debug.Log("true");
-            outputSlot.GetComponent<MaterialItemSlot>().AddIcon(testRecipe.output);
+            outputSlot.GetComponent<MaterialItemSlot>().AddIcon(testRecipe.output as MaterialItem);
 
             clearAllCrockpotSlots();
         }

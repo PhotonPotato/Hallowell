@@ -189,6 +189,7 @@ public class PlayerMovementScript : MonoBehaviour
             }
 
             jumpInputBuffer = Mathf.NegativeInfinity;
+            cayoteTimer = 0;
         }
         else
         {
@@ -451,7 +452,7 @@ public class PlayerMovementScript : MonoBehaviour
                 foreach (Collider2D col in playerHitboxCols)
                 {
                     //Reference the player manager to deal damage.
-                    playerManager.dealDamage(col.gameObject);
+                    playerManager.DealDamage(col.gameObject);
                 }
             }
         }

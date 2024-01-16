@@ -67,6 +67,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02758208329213049b544bc190da0ba0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  animationHandler: {fileID: 0}
 --- !u!1 &2630371547612667549
 GameObject:
   m_ObjectHideFlags: 0

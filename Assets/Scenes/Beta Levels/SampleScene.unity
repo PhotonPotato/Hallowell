@@ -1090,6 +1090,8 @@ MonoBehaviour:
   playerVel: {x: 0, y: 0}
   camFollowDelay: 3
   camLookAheadMult: 0.01
+  currentCamSpeed: 0
+  lastCamSpeed: 0
 --- !u!114 &473517303
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1126,6 +1128,7 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  detectionOffsetX: 0
   detectionOffsetY: 0.5
   detectionWidth: 0.53
   detectionHeight: 1
@@ -1141,6 +1144,7 @@ MonoBehaviour:
   pushOffDuration: 0.5
   postPushOffDampeningOffset: 0.1
   wallYVelocityDecay: 0.92
+  jumpFromWallBase: 0
   showEffects: 1
   stompDetectionWidth: 0.2
   stompDetectionHeight: 0.165
@@ -1164,6 +1168,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerMovement: {fileID: 0}
+  playerCombat: {fileID: 0}
   playerCameraController: {fileID: 0}
   invincibilityTimer: 0
   invincibilityTime: 1
@@ -1172,6 +1177,11 @@ MonoBehaviour:
   healthBarSlider: {fileID: 0}
   healthBarSmoothing: {fileID: 0}
   smoothingValue: 100
+  stationInteractionRadius: 5
+  stationInteractionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  weaponPositionParent: {fileID: 0}
 --- !u!50 &473517305
 Rigidbody2D:
   serializedVersion: 4
@@ -1644,6 +1654,7 @@ GameObject:
   - component: {fileID: 519420032}
   - component: {fileID: 519420031}
   - component: {fileID: 519420029}
+  - component: {fileID: 519420033}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1717,6 +1728,39 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519420033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_Version: 2
 --- !u!1 &531532359
 GameObject:
   m_ObjectHideFlags: 0
@@ -25402,11 +25446,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 912159272b7d36948b8d45d6054a2735, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerMan: {fileID: 0}
   playerPos: {fileID: 473517309}
   hotBarPanel: {fileID: 285159141}
   InventoryPanel: {fileID: 878669179}
   InventorySlotObject: {fileID: 8827477031512018586, guid: 0353dc26798d8604da1c5ce1553a0d52, type: 3}
   inventorySlotsParent: {fileID: 897826308}
+  materialItemSlots: []
   mouseMan: {fileID: 1909342203}
   itemLayer:
     serializedVersion: 2
@@ -25414,6 +25460,11 @@ MonoBehaviour:
   attractionRadius: 5
   attractionForce: 0.05
   pickupRadius: 0.6
+  inventoryPanelOpen: 0
+  emptyItemPickup: {fileID: 0}
+  itemDropOffset: {x: 0, y: 0, z: 0}
+  dropParent: {fileID: 0}
+  lastDropitem: {fileID: 0}
 --- !u!4 &1909342202
 Transform:
   m_ObjectHideFlags: 0
@@ -25445,6 +25496,16 @@ MonoBehaviour:
   labelPosOffset: {x: 30, y: -10, z: 0}
   mouseLabel: {fileID: 1506281110}
   mouseLine: {fileID: 283032954}
+  onOutputSlot: 0
+  closestSlot: {fileID: 0}
+  mouseContainerFull: 0
+  mouseItemContainer: {fileID: 0}
+  mouseContainerImage: {fileID: 0}
+  dragBackButtonObject: {fileID: 0}
+  itemActionMenuParent: {fileID: 0}
+  verticalStack: {fileID: 0}
+  itemActionMenuOffset: {x: 0, y: 0}
+  itemActionMenuOpen: 0
 --- !u!1 &1930638824
 GameObject:
   m_ObjectHideFlags: 0

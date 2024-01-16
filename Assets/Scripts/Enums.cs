@@ -10,7 +10,8 @@ public class Enums
 public enum ItemType
 {
     MaterialItem,
-    WeaponItem
+    WeaponItem,
+    HealthItem
 }
 
 public enum AttackType

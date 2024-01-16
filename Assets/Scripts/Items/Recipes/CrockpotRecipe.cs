@@ -17,7 +17,7 @@ public class CrockpotRecipe : ScriptableObject
 
     public bool ignoreOrientation = false;
 
-    public MaterialItem output;
+    public ItemData output;
 
     public int getNumberItems()
     {

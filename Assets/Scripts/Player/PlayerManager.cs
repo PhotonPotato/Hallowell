@@ -50,7 +50,7 @@ public class PlayerManager : MonoBehaviour
 
     void Update()
     {
-        updateHealthBar();
+        UpdateHealthBar();
 
         //Update Timers
         if (invincibilityTimer > 0) invincibilityTimer -= Time.deltaTime;
@@ -75,7 +75,7 @@ public class PlayerManager : MonoBehaviour
                     //The player is touching spikes.
 
                     //This value is adjustable
-                    dealDamage(20, false);
+                    DealDamage(20, false);
 
                     playerMovement.resetPlayerInLevel();
                 }
@@ -106,7 +106,7 @@ public class PlayerManager : MonoBehaviour
         if (Input.GetKeyDown("e"))
         {
             //Maybe play a sound or smthn
-            checkForInteraction();
+            CheckForInteraction();
         }
 
         if (playerInventoryManager.crockpotPanelOpen)
@@ -127,13 +127,13 @@ public class PlayerManager : MonoBehaviour
         weaponPositionParent.transform.rotation = playerFacingRight ? Quaternion.identity : Quaternion.Euler(0, 180, 0);
     }
 
-    public void initializeHealthBar()
+    public void InitializeHealthBar()
     {
         healthBarSlider.maxValue = playerHealth.maxHealth;
         healthBarSmoothing.maxValue = playerHealth.maxHealth;
     }
 
-    public void updateHealthBar()
+    public void UpdateHealthBar()
     {
         float currentPlayerHealth = playerHealth.getHealth();
 
@@ -144,7 +144,7 @@ public class PlayerManager : MonoBehaviour
         healthBarSmoothing.value = currentSmoothingBarValue + ((currentPlayerHealth - currentSmoothingBarValue) / smoothingValue);
     }
 
-    public void dealDamage(GameObject obj)
+    public void DealDamage(GameObject obj)
     {
         if (invincibilityTimer > 0) return;
 
@@ -156,7 +156,7 @@ public class PlayerManager : MonoBehaviour
         invincibilityTimer = invincibilityTime;
     }
 
-    public void dealDamage(float damageAmount, bool forceDamage = false)
+    public void DealDamage(float damageAmount, bool forceDamage = false)
     {
         if (invincibilityTimer > 0 && !forceDamage) return;
 
@@ -166,7 +166,7 @@ public class PlayerManager : MonoBehaviour
         invincibilityTimer = invincibilityTime;
     }
 
-    public void checkForInteraction()
+    public void CheckForInteraction()
     {
         Collider2D[] interactableStationColliders = Physics2D.OverlapCircleAll((Vector2)transform.position, stationInteractionRadius, stationInteractionMask);
 
@@ -185,5 +185,11 @@ public class PlayerManager : MonoBehaviour
                 currentInteractionObject = col.gameObject;
             }
         }
+    }
+
+    public void HealPlayer(float amount)
+    {
+        //Add health and clamp to max hp
+        playerHealth.currentHealth = Mathf.Clamp(playerHealth.currentHealth + amount, 0, playerHealth.maxHealth);
     }
 }

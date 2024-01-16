@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 [System.Serializable]
 [CreateAssetMenu(menuName = "ScriptableObjects/Items/MaterialItem")]
@@ -18,10 +19,13 @@ public class MaterialItem : ItemData
         this.empty = empty;
     }
 
+    public float healthPointsHealed = 0;
+
     public MaterialItem getDeepCopy()
     {
         MaterialItem temp = CreateInstance("MaterialItem") as MaterialItem;
-        temp.init(itemName, itemIcon, id, quantity, maxQuantity, stackable, empty);
+        temp.init(itemName, itemIcon, id, quantity, maxQuantity, stackable, empty, itemType);
+        temp.healthPointsHealed = healthPointsHealed;
         return temp;
     }
 }

@@ -61,8 +61,6 @@ public class PlayerCameraController : MonoBehaviour
             //Return if its the same thing
         if (collision.gameObject.GetComponent<CamConstraintHolder>().cameraConstraint == camConstraints) return;
 
-        Debug.Log("enter");
-
     //Look for camera zones
         currentCamSpeed = camConstraints.getSpeed();
         camConstraints = collision.gameObject.GetComponent<CamConstraintHolder>().cameraConstraint;

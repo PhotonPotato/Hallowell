@@ -28,8 +28,15 @@ public class InventoryUIManager : MonoBehaviour
 
     Vector3 defaultHealthBarPos;
 
+    public GameObject emptyItemPickup;
+    public Vector3 itemDropOffset;
+    public Transform dropParent;
+
+    public GameObject lastDropitem;
+
     void Start()
     {
+        Instantiate(new GameObject());
         //materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
         playerInventory = new PlayerInventory(this);
         playerMan = FindObjectOfType<PlayerManager>();
@@ -153,5 +160,39 @@ public class InventoryUIManager : MonoBehaviour
                 return;
             }
         }
+    }
+
+    //Remove item from inventory and spawn item pickup
+    public void DropItemAsPickup(MaterialItem item, int index, GameObject destroySlot = null)
+    {
+        RemoveInventorySlot(index);
+        
+        //Instantiate and place pickup
+        GameObject pickup = Instantiate(emptyItemPickup, dropParent);
+
+        pickup.transform.position = playerPos.position + itemDropOffset;
+
+        //Add data to item slot container
+        MaterialItemSlot pickupSlot = pickup.GetComponent<MaterialItemSlot>();
+
+        pickupSlot.item = item.getDeepCopy();
+
+        Debug.Log(pickup.transform.parent);
+        Debug.Log(pickup);
+        lastDropitem = pickup;
+        //Make sure it has a sprite
+        pickup.GetComponent<SpriteRenderer>().sprite = pickupSlot.item.itemIcon;
+        //*/
+        Debug.Log("Dropped");
+    }
+
+    public void RemoveInventorySlot(int index)
+    {
+        playerInventory.removeItem(index);
+
+        //Remove the specified slot
+        DestroyImmediate(materialItemSlots[index].gameObject);
+
+        RefreshMaterialInventory();
     }
 }
