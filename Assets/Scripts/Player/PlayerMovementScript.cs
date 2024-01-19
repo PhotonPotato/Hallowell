@@ -405,7 +405,7 @@ public class PlayerMovementScript : MonoBehaviour
                 {
                     //Contact point exists on top of object.
                     enemyHealthContainer container = col.gameObject.GetComponent<enemyHealthContainer>();
-                    container.dealDamage(5);
+                    container.DealDamage(5);
 
                     //Detect stomp jump
                     if (Input.GetButton("Jump") && jumpButtonReset)

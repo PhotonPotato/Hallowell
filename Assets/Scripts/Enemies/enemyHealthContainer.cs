@@ -10,18 +10,18 @@ public class enemyHealthContainer : MonoBehaviour
     public bool destroyOnNoHealth = false;
 
     public bool respawnWithTime = false;
-    bool inactive = false;
+    [System.NonSerialized] public bool inactive = false;
     public float respawnTime = 10;
-    float respawnTimer = 0;
+    [System.NonSerialized] public float respawnTimer = 0;
 
     public float maxHealth;
     public float currentHealth;
 
     //Health bar slider vars
     public bool showHealthBarOnDealDamage = false;
-    bool healthBarCreated = false;
+    [System.NonSerialized] public bool healthBarCreated = false;
     public GameObject canvasWithHealthBar;
-    GameObject barObj;
+    [System.NonSerialized] public GameObject barObj;
 
     public Vector3 healthBarScale = new Vector3(0.05f, 0.05f, 0.05f);
 
@@ -52,7 +52,7 @@ public class enemyHealthContainer : MonoBehaviour
     }
 
     //A public mehtod to deal damage
-    public void dealDamage(float damage)
+    public virtual void DealDamage(float damage)
     {
         currentHealth -= damage;
 
@@ -83,6 +83,9 @@ public class enemyHealthContainer : MonoBehaviour
             {
                 barObj = Instantiate(canvasWithHealthBar, transform.position + new Vector3(Random.Range(-10, 10), 0, 0), Quaternion.identity, this.gameObject.transform);
                 barObj.transform.localScale = healthBarScale;
+
+                //This vector 3 is the OFFSET  
+                barObj.transform.position = transform.position + new Vector3(0, 4, 0);
 
                 barObj.GetComponentInChildren<Slider>().maxValue = maxHealth;
 

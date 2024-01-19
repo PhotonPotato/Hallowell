@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 531427733043831618}
   - component: {fileID: 6729047908257624974}
   - component: {fileID: -5998330881594855578}
-  - component: {fileID: 1421492147439681762}
+  - component: {fileID: -1344357151529958875}
   m_Layer: 9
   m_Name: LegColliderObject
   m_TagString: Untagged
@@ -70,7 +70,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   legID: 0
   parentAnimationScript: {fileID: 0}
---- !u!114 &1421492147439681762
+--- !u!114 &-1344357151529958875
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -79,7 +79,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7629929096589105552}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41382816ae7554845a0952ebe9f43fd9, type: 3}
+  m_Script: {fileID: 11500000, guid: 4e76dfa3725a945c599e1a75c8547c67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   objID: 0
@@ -88,7 +88,8 @@ MonoBehaviour:
   respawnTime: 10
   maxHealth: 100
   currentHealth: 100
-  showHealthBarOnDealDamage: 1
-  canvasWithHealthBar: {fileID: 4501182517739621250, guid: fe46aa24f6d0d45a4a348f2b435cd452, type: 3}
-  healthBarScale: {x: 1, y: 1, z: 1}
+  showHealthBarOnDealDamage: 0
+  canvasWithHealthBar: {fileID: 0}
+  healthBarScale: {x: 0.05, y: 0.05, z: 0.05}
   damageDealt: 10
+  DamageCallbackToParent: 0

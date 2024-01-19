@@ -65,7 +65,7 @@ public class PlayerCombatScript : MonoBehaviour
                     if (healthContainerCache.Contains(enemyHealthContainer)) return;
 
                     //Change this later btw MAKE THE DAMAGE AMT MORE NUANCED
-                    enemyHealthContainer.dealDamage(slotManager.activeWeaponItem.baseAttackDamage);
+                    enemyHealthContainer.DealDamage(slotManager.activeWeaponItem.baseAttackDamage);
 
                     //Save it in the cache for later
                     healthContainerCache.Add(enemyHealthContainer);
