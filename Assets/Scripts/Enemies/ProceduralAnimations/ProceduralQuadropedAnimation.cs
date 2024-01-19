@@ -27,6 +27,8 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         public float distanceToNextTarget = 0;
 
+        public float realLength = 0;
+
         public LegObject(int id, int numJoints, float legYOffset = 1.5f, float legMoveSpeedTimePerUnit = .4f)
         {
             this.id = id;
@@ -36,6 +38,8 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             this.legMoveSpeedTimePerUnit = legMoveSpeedTimePerUnit;
 
             LegPoints = new Vector3[numJoints];
+
+            currentPos = new Vector3(0, 0, 0);
         }
 
         public int getLength()
@@ -76,6 +80,21 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             newPos.y += Mathf.Sin(t * Mathf.PI) * legYOffset;
 
             currentPos = newPos;
+        }
+
+        public float CalcRealLength()
+        {
+            float output = 0;
+
+            //Get the real worldspace sum of distance between all joints
+            for (int i = 1; i < numJoints; i++)
+            {
+                output += Vector3.Distance(LegPoints[i], LegPoints[i - 1]);
+            }
+
+            realLength = output;
+
+            return output;
         }
     }
 
@@ -128,10 +147,14 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     //Other internal vars
     public int numLegsOnGround = 0;
 
+    public GameObject LegColliderObjPrefab;
+    public Transform LegColliderBin;
+    [NonSerialized] public GameObject[] LegColliderObjects;
+
     private void Start()
     {
         //LegRederers = LegRendererBin.GetComponentsInChildren<LineRenderer>();
-        initLegs();
+        InitLegs();
         completeLength = boneLength * legLength;
 
         //Set bones
@@ -153,7 +176,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         float distanceFalloffMultiplier = -1 * Mathf.Pow(.5f, Mathf.Abs(transform.position.x - Camera.main.ScreenToWorldPoint(Input.mousePosition).x)) + 1;
 
         newPos.x += bodyMoveSpeed * Mathf.Sign(Camera.main.ScreenToWorldPoint(Input.mousePosition).x - transform.position.x) * distanceFalloffMultiplier * Time.deltaTime;
-        newPos.y += (calculateBodyHeight() - newPos.y) / 100;
+        newPos.y += (CalculateBodyHeight() - newPos.y) / 100;
 
         transform.position = newPos;
 
@@ -169,12 +192,22 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
                 numLegsOnGround++;
             }
 
-            raycastedNewPos = getNewTargetPosFromPoint(targetPoints[i].position);
+            raycastedNewPos = GetNewTargetPosFromPoint(targetPoints[i].position);
             //SUPER UGLY IMPLEMENTATION, FIX LATER
             LegObjects[i].targetPos = raycastedNewPos;
 
-            if (LegObjects[i].checkDistanceToNextTarget(raycastedNewPos) + Vector3.Distance(LegObjects[i].currentPos, transform.position)
+
+            /*if (LegObjects[i].checkDistanceToNextTarget(raycastedNewPos) + Vector3.Distance(LegObjects[i].currentPos, transform.position)
                >= LegObjects[furthestLegFromTarget].distanceToNextTarget + Vector3.Distance(LegObjects[furthestLegFromTarget].currentPos, transform.position))
+            {
+                furthestLegFromTarget = i;
+            }*/
+
+
+            //Pretty ssure this updates something so if you dont call it per leg shit gets fucked
+            LegObjects[i].checkDistanceToNextTarget(raycastedNewPos);
+
+            if (LegObjects[i].realLength >= LegObjects[furthestLegFromTarget].realLength)
             {
                 furthestLegFromTarget = i;
             }
@@ -183,14 +216,14 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         //Start iterating on the most distant leg
         //for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++)
-        int[] orderOfIteration = getRandomizedIndicies(numLegs);
+        //int[] orderOfIteration = GetRandomizedIndicies(numLegs);
 
-        Debug.Log(orderOfIteration[0] + " " + orderOfIteration[1] + " " + orderOfIteration[2] + " " + orderOfIteration[3]);
+        //Debug.Log(orderOfIteration[0] + " " + orderOfIteration[1] + " " + orderOfIteration[2] + " " + orderOfIteration[3]);
 
-        for (int i = 0; i < numLegs; i++)
+        for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++) //for (int i = 0; i < numLegs; i++)
         {
-            int index = orderOfIteration[i];
-            //if (index >= numLegs) index -= numLegs;
+            int index = i;//orderOfIteration[i];
+            if (index >= numLegs) index -= numLegs;
 
             if (LegObjects[index].distanceToNextTarget >= maxDist && !LegObjects[index].movingLeg && numLegsOnGround > numLegsNeededOnGround)
             {
@@ -200,12 +233,19 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
             LegObjects[index].updateLeg();
 
-            moveBones(index);
-            updateLegIK(index);
+            MoveBones(index);
+            UpdateLegIK(index);
+
+            //Update complete leg length every other frame
+            if (Time.frameCount % 2 == 0)
+            {
+                LegObjects[index].CalcRealLength();
+            }
         }
 
         if (numLegsOnGround == numLegs && LegObjects[furthestLegFromTarget].distanceToNextTarget >= maxRestDist)
         {
+            Debug.Log("move call correct");
             LegObjects[furthestLegFromTarget].setNewLegMove(LegObjects[furthestLegFromTarget].targetPos);
             numLegsOnGround--;
         }
@@ -222,7 +262,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         }
     }
 
-    public bool checkDistToNextTarget()
+    public bool CheckDistToNextTarget()
     {
         bool dist = Vector3.Distance(raycastedNewPos, FootPlaceholder.transform.position) >= maxDist;
 
@@ -231,14 +271,14 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         return dist;
     }
 
-    public Vector3 getNewTargetPosFromPoint(Vector3 point)
+    public Vector3 GetNewTargetPosFromPoint(Vector3 point)
     {
-        RaycastHit2D ray = Physics2D.Raycast(point, Vector2.down, 100, LayerMask.GetMask("Ground"));
+        RaycastHit2D ray = Physics2D.Raycast(point, Vector2.down, 100, LayerMask.GetMask("Ground", "Wall"));
 
         return ray.point;
     }
 
-    public void moveLeg(int index = 0)
+    public void MoveLeg(int index = 0)
     {
         float t = (Time.time - timeOfLastMove) / legmoveSpeedTimePerUnit;
 
@@ -266,7 +306,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
     }
 
-    public void updateLegIK(int legIndex)
+    public void UpdateLegIK(int legIndex)
     {
         LegObjects[legIndex].legRender.positionCount = LegObjects[legIndex].numJoints;
 
@@ -276,19 +316,24 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         }
     }
 
-    public void initLegs()
+    public void InitLegs()
     {
         LegObjects = new LegObject[numLegs];
+        LegColliderObjects = new GameObject[numLegs];
 
         for (int i = 0; i < numLegs; i++)
         {
             LegObjects[i] = new LegObject(i, legLength, legYOffset, legmoveSpeedTimePerUnit);
 
             LegObjects[i].legRender = LegRendererBin.GetComponentsInChildren<LineRenderer>()[i];
+
+            //Instantiate the leg collider renderers
+            LegColliderObjects[i] = Instantiate(LegColliderObjPrefab, Vector3.zero, Quaternion.identity, LegColliderBin);
+            LegColliderObjects[i].GetComponent<ProceduralQuadropedLegCollisionHandler>().Init(this, i);
         }
     }
 
-    public void moveBones(int legIndex)
+    public void MoveBones(int legIndex)
     {
         LegObject currentLeg = LegObjects[legIndex];
         Vector3 currentTargetPos = currentLeg.currentPos;
@@ -340,7 +385,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         currentLeg.LegPoints[currentLegLength - 1] = currentTargetPos;
     }
 
-    public int[] getRandomizedIndicies(int range)
+    public int[] GetRandomizedIndicies(int range)
     {
         int[] output = new int[range];
 
@@ -349,13 +394,13 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         for (int i = 0; i < range; i++)
         {
-            output[i] = getNewNum(UnityEngine.Random.Range(0, range), output, range, 100);
+            output[i] = GetNewNum(UnityEngine.Random.Range(0, range), output, range, 100);
         }
         
         return output;
     }
 
-    public int getNewNum(int a, int[] input, int len, int lim)
+    public int GetNewNum(int a, int[] input, int len, int lim)
     {
         if (lim == 0)
         {
@@ -367,11 +412,11 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         }
         else
         {
-            return getNewNum(UnityEngine.Random.Range(0, len), input, len, lim - 1);
+            return GetNewNum(UnityEngine.Random.Range(0, len), input, len, lim - 1);
         }
     }
 
-    public float calculateBodyHeight()
+    public float CalculateBodyHeight()
     {
         float averageLegHeight = 0;
         int numLegsInCalculation = 0;

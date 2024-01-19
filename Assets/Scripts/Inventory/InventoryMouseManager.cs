@@ -30,7 +30,7 @@ public class InventoryMouseManager : MonoBehaviour
     public Vector2 itemActionMenuOffset;
     public bool itemActionMenuOpen = false;
     //miight wanna not do this fix later
-    float itemActionMenuHideDelay = .1f;
+    float itemActionMenuHideDelay = .2f;
     float timeActionMenuClosed = Mathf.NegativeInfinity;
 
     private void Start()

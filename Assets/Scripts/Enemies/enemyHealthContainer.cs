@@ -23,7 +23,12 @@ public class enemyHealthContainer : MonoBehaviour
     public GameObject canvasWithHealthBar;
     GameObject barObj;
 
+    public Vector3 healthBarScale = new Vector3(0.05f, 0.05f, 0.05f);
+
     public float damageDealt;
+
+    //CLEAN THIS PLEASE
+    public bool DamageCallbackToParent = false;
 
     private void Update()
     {
@@ -76,10 +81,12 @@ public class enemyHealthContainer : MonoBehaviour
             //If the option to create a health bar when damage is dealt then instantiate a worldspace canvas (with health bar) and update boolean
             if (showHealthBarOnDealDamage && !healthBarCreated)
             {
-                barObj = Instantiate(canvasWithHealthBar, transform.position, Quaternion.identity, this.gameObject.transform);
-                barObj.transform.localScale = new Vector3(.05f, .05f, .05f);
+                barObj = Instantiate(canvasWithHealthBar, transform.position + new Vector3(Random.Range(-10, 10), 0, 0), Quaternion.identity, this.gameObject.transform);
+                barObj.transform.localScale = healthBarScale;
 
                 barObj.GetComponentInChildren<Slider>().maxValue = maxHealth;
+
+                barObj.GetComponent<Canvas>().worldCamera = Camera.main;
 
                 healthBarCreated = true;
             }

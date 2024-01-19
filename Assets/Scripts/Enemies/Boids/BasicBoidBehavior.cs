@@ -13,6 +13,8 @@ public class BasicBoidBehavior : MonoBehaviour
 
         public int targetJointIndex;
 
+        public bool active;
+
         public void updatePos()
         {
             obj.transform.position = position;
