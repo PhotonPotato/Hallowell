@@ -97,6 +97,8 @@ public class BasicBoidBehavior : MonoBehaviour
             boids[i].targetJointIndex = Random.Range(0, numJoints);
             
             boids[i].obj.transform.SetParent(BoidParent);
+
+            boids[i].active = true;
         }
     }
 
@@ -122,7 +124,7 @@ public class BasicBoidBehavior : MonoBehaviour
             Vector2 newVelocity = boids[i].velocity;
             
             //Test optimization
-            optimizedAllInOne(boids[i]);
+            OptimizedAllInOne(boids[i]);
 
             targetPointVel = (boids[i].position - (Vector2) joints[boids[i].targetJointIndex].transform.position);
 
@@ -160,7 +162,8 @@ public class BasicBoidBehavior : MonoBehaviour
             }
         }
     }
-    public void optimizedAllInOne(Boid bInit)
+
+    public void OptimizedAllInOne(Boid bInit)
     {
         mergeVel = Vector2.zero;
         alignVel = Vector2.zero;
@@ -275,5 +278,39 @@ public class BasicBoidBehavior : MonoBehaviour
             }
         }
         return c;
+    }
+
+    //Procedural qudroped functionality
+    public void DestroyBoids(int numBoidsToDestroy)
+    {
+        //Make sure we don't go negative
+        if (numBoids - numBoidsToDestroy < 0)
+        {
+            numBoidsToDestroy = numBoids;
+        }
+
+        //Dump boids into a scaled down array array
+        Boid[] tempBoidBin = new Boid[numBoids - numBoidsToDestroy];
+
+        for (int i = 0; i < numBoids; i++)
+        {
+            if (i < numBoids - numBoidsToDestroy)
+            {
+                tempBoidBin[i] = boids[i];
+            }
+            else
+            {
+                //DESTROY/DEACTIVATE other boids
+                boids[i].active = false;
+
+                ///Maybe delete later (if u want to have it regen health)
+                Destroy(boids[i].obj);
+            }
+        }
+
+        boids = tempBoidBin;//.Clone() as Boid[];
+        numBoids -= numBoidsToDestroy;
+
+     //   print("boids " + numBoids);
     }
 }

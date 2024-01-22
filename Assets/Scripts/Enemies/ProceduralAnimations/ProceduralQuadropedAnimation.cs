@@ -212,7 +212,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
                 furthestLegFromTarget = i;
             }
         }
-        print(furthestLegFromTarget);
+        //print(furthestLegFromTarget);
 
         //Start iterating on the most distant leg
         //for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++)
@@ -330,6 +330,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             //Instantiate the leg collider renderers
             LegColliderObjects[i] = Instantiate(LegColliderObjPrefab, Vector3.zero, Quaternion.identity, LegColliderBin);
             LegColliderObjects[i].GetComponent<ProceduralQuadropedLegCollisionHandler>().Init(this, i);
+            LegColliderObjects[i].GetComponent<enemyHealthContainer>().objID = i;
         }
     }
 

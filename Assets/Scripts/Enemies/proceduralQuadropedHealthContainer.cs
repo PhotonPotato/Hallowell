@@ -5,7 +5,18 @@ using UnityEngine.UI;
 
 public class proceduralQuadropedHealthContainer : enemyHealthContainer
 {
-    
+    //Number of boids to destroy per hit point
+    public float boidToHealthRatio = 0;
+    public ProceduralQuadropedAnimation parentQuadropedScript;
+
+    //NOTE: in this case the obj id stores the sibling index
+
+    public void Start()
+    {
+        parentQuadropedScript = transform.parent.parent.GetComponentInChildren<ProceduralQuadropedAnimation>();
+        boidToHealthRatio = parentQuadropedScript.boidBehaviorScripts[transform.GetSiblingIndex()].numBoids / maxHealth;
+    }
+
     public override void DealDamage(float damageAmount)
     {
         //SAME AS INHERETED **Maybe find a way to optimize this**
@@ -51,6 +62,8 @@ public class proceduralQuadropedHealthContainer : enemyHealthContainer
             }
         }
 
+        //BELOW IS CUSTOM SCRIPT for this class
+
         if (currentHealth > 0)
         {
             if (currentHealth < damageAmount)
@@ -60,6 +73,9 @@ public class proceduralQuadropedHealthContainer : enemyHealthContainer
             }
 
             transform.parent.parent.GetComponentInChildren<enemyHealthContainer>().DealDamage(damageAmount);
+
+            //Now to destroy boids
+            parentQuadropedScript.boidBehaviorScripts[objID].DestroyBoids((int) (damageAmount * boidToHealthRatio));
         }
     }
 }
