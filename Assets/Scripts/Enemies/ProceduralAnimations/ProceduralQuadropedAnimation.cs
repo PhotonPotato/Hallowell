@@ -146,10 +146,14 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
     //Other internal vars
     public int numLegsOnGround = 0;
+    public int startingTotalBoids = 0;
+     public int currentBoidCountTotal = 0;
 
     public GameObject LegColliderObjPrefab;
     public Transform LegColliderBin;
     [NonSerialized] public GameObject[] LegColliderObjects;
+
+    [NonSerialized] public bool entityDead = false;
 
     private void Start()
     {
@@ -163,19 +167,26 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             //boidBehaviorScripts[i] = boidManager.AddComponent<BasicBoidBehavior>();
 
             boidBehaviorScripts[i].numJoints = legLength;
+
+            //Use this iteration for boid counter
+            startingTotalBoids += boidBehaviorScripts[i].numBoids;
         }
-        
     }
 
     public void Update()
     {
+        if (entityDead) return;
+
         //Update body position
         Vector3 newPos = transform.position;
 
         //Made in desmos
         float distanceFalloffMultiplier = -1 * Mathf.Pow(.5f, Mathf.Abs(transform.position.x - Camera.main.ScreenToWorldPoint(Input.mousePosition).x)) + 1;
 
-        newPos.x += bodyMoveSpeed * Mathf.Sign(Camera.main.ScreenToWorldPoint(Input.mousePosition).x - transform.position.x) * distanceFalloffMultiplier * Time.deltaTime;
+        //Update the body x
+        newPos.x += bodyMoveSpeed * Mathf.Sign(Camera.main.ScreenToWorldPoint(Input.mousePosition).x - transform.position.x) *
+                    distanceFalloffMultiplier * easeOutQuint((float) currentBoidCountTotal/ startingTotalBoids) * Time.deltaTime;
+
         newPos.y += (CalculateBodyHeight() - newPos.y) / 100;
 
         transform.position = newPos;
@@ -252,13 +263,17 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         //Boid shit
         if (!useBoids) return;
+
+        currentBoidCountTotal = 0;
+
         for (int i = 0; i < numLegs; i++)
         {
             for (int j = 0; j < legLength; j++)
             {
                 boidBehaviorScripts[i].joints[j].transform.position = LegObjects[i].LegPoints[j];
-
             }
+
+            currentBoidCountTotal += boidBehaviorScripts[i].numBoids;
         }
     }
 
@@ -434,6 +449,14 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         averageLegHeight /= numLegsInCalculation;
 
-        return averageLegHeight + averageBodyHeight;
+        //Cast otherwise its int/int = int
+        float legDamagedMultiplier = easeOutQuint((float) currentBoidCountTotal / startingTotalBoids);
+
+        return averageLegHeight + (averageBodyHeight * legDamagedMultiplier);
+    }
+
+    float easeOutQuint(float x)
+    {
+        return 1 - Mathf.Pow(1 - x, 5);
     }
 }

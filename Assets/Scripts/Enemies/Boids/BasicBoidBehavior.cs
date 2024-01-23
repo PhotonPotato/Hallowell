@@ -56,6 +56,9 @@ public class BasicBoidBehavior : MonoBehaviour
     [Space]
     public Vector2 targetPos;
 
+    //Put this in an inherited class later?
+    public bool update = true;
+
     [Header("Prefabs")]
     public GameObject boidPrefab;
     
@@ -78,7 +81,7 @@ public class BasicBoidBehavior : MonoBehaviour
     private void Update()
     {
         //if (Input.GetMouseButton(0)) targetPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        updateBoids();
+        if(update) updateBoids();
     }
 
     public void initializeBoids()
