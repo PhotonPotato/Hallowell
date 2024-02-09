@@ -15,12 +15,12 @@ public class BasicBoidBehavior : MonoBehaviour
 
         public bool active;
 
-        public void updatePos()
+        public void UpdatePos()
         {
             obj.transform.position = position;
         }
 
-        public void updateRot()
+        public void UpdateRot()
         {
             float radvalue = Mathf.Atan2(velocity.y, velocity.x);
             obj.transform.rotation = Quaternion.Euler(0,0,(radvalue - 90) * (180 / Mathf.PI));
@@ -41,6 +41,9 @@ public class BasicBoidBehavior : MonoBehaviour
     public float avoidDist = 10;
 
     [Space]
+    public bool useBounds = true;
+
+    [Space]
     //Joint implementation
     public GameObject[] joints;
     public Transform JointParent;
@@ -58,6 +61,8 @@ public class BasicBoidBehavior : MonoBehaviour
 
     //Put this in an inherited class later?
     public bool update = true;
+    float timeOfDeath = Mathf.NegativeInfinity;
+    float originalSpeedCap = 0;
 
     [Header("Prefabs")]
     public GameObject boidPrefab;
@@ -81,7 +86,25 @@ public class BasicBoidBehavior : MonoBehaviour
     private void Update()
     {
         //if (Input.GetMouseButton(0)) targetPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        if(update) updateBoids();
+        if (!update)
+        {
+            if (boids != null)
+            {
+                foreach (Boid boid in boids)
+                {
+                    Destroy(boid.obj);
+                }
+
+                boids = null;
+
+                Resources.UnloadUnusedAssets();
+            }
+
+            return;
+        }
+
+        CheckForBoidDeath();
+        updateBoids();
     }
 
     public void initializeBoids()
@@ -146,12 +169,12 @@ public class BasicBoidBehavior : MonoBehaviour
             boids[i].position += newVelocity * Time.deltaTime;
 
             //Send the boids outisde bounds to other side
-            if (Mathf.Abs(boids[i].position.x) > spawnBounds.x) boids[i].position.x = spawnBounds.x * .95f * Mathf.Sign(boids[i].position.x) * -1;
-            if (Mathf.Abs(boids[i].position.y) > spawnBounds.y) boids[i].position.y = spawnBounds.y * .95f * Mathf.Sign(boids[i].position.y) * -1;
+            if (Mathf.Abs(boids[i].position.x) > spawnBounds.x && useBounds) boids[i].position.x = spawnBounds.x * .95f * Mathf.Sign(boids[i].position.x) * -1;
+            if (Mathf.Abs(boids[i].position.y) > spawnBounds.y && useBounds) boids[i].position.y = spawnBounds.y * .95f * Mathf.Sign(boids[i].position.y) * -1;
 
             //Update actual object transform
-            boids[i].updatePos();
-            boids[i].updateRot();
+            boids[i].UpdatePos();
+            boids[i].UpdateRot();
 
             //Update boids search for new pos
             if (Mathf.Abs(Vector2.Distance(boids[i].position, joints[boids[i].targetJointIndex].transform.position)) <= jointReachedDist)
@@ -315,5 +338,24 @@ public class BasicBoidBehavior : MonoBehaviour
         numBoids -= numBoidsToDestroy;
 
      //   print("boids " + numBoids);
+    }
+
+    //Also specific to boidfang
+    public void OnParentDeath()
+    {
+        timeOfDeath = Time.time;
+        originalSpeedCap = maxBoidVelocity;
+    }
+
+    public void CheckForBoidDeath()
+    {
+        if (timeOfDeath == Mathf.NegativeInfinity) return;
+
+        float multiplier = Mathf.Pow(.2f, Time.time - timeOfDeath);
+
+        maxBoidVelocity = originalSpeedCap * multiplier;
+        AvoidRuleWeight *= 1f;
+
+        if (Time.time - timeOfDeath > 3) update = false;
     }
 }

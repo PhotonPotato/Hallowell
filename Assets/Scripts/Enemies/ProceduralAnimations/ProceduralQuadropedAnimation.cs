@@ -14,6 +14,8 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         Vector3 lastMovePos;
         public Vector3 currentPos;
 
+        public Vector3 raycastedNewPos;
+
         public float timeOfLastMove = 0;
         public bool movingLeg = false;
 
@@ -42,18 +44,18 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             currentPos = new Vector3(0, 0, 0);
         }
 
-        public int getLength()
+        public int GetLength()
         {
             return numJoints;
         }
 
-        public float checkDistanceToNextTarget(Vector3 raycastedNewPos)
+        public float CheckDistanceToNextTarget()
         {
             distanceToNextTarget = Vector3.Distance(raycastedNewPos, currentPos);
             return distanceToNextTarget;
         }
 
-        public void setNewLegMove(Vector3 newPos)
+        public void SetNewLegMove(Vector3 newPos)
         {
             targetPos = newPos;
             timeOfLastMove = Time.time;
@@ -62,7 +64,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             movingLeg = true;
         }
 
-        public void updateLeg()
+        public void UpdateLeg()
         {
             if (!movingLeg) return;
 
@@ -100,7 +102,6 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
     [Header("References")]
     public Transform[] targetPoints;
-    Vector3 raycastedNewPos;
     public GameObject LegRendererBin;
     public LineRenderer[] LegRederers;
 
@@ -124,7 +125,6 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     public LegObject[] LegObjects;
 
     public float averageBodyHeight = 5f;
-    public float bodyMoveSpeed = 4f;
 
     //public Vector3[,] LegPoints;
 
@@ -171,25 +171,13 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             //Use this iteration for boid counter
             startingTotalBoids += boidBehaviorScripts[i].numBoids;
         }
+
+        LegRendererBin.transform.position = transform.localPosition * -1;
     }
 
     public void Update()
     {
         if (entityDead) return;
-
-        //Update body position
-        Vector3 newPos = transform.position;
-
-        //Made in desmos
-        float distanceFalloffMultiplier = -1 * Mathf.Pow(.5f, Mathf.Abs(transform.position.x - Camera.main.ScreenToWorldPoint(Input.mousePosition).x)) + 1;
-
-        //Update the body x
-        newPos.x += bodyMoveSpeed * Mathf.Sign(Camera.main.ScreenToWorldPoint(Input.mousePosition).x - transform.position.x) *
-                    distanceFalloffMultiplier * easeOutQuint((float) currentBoidCountTotal/ startingTotalBoids) * Time.deltaTime;
-
-        newPos.y += (CalculateBodyHeight() - newPos.y) / 100;
-
-        transform.position = newPos;
 
         //transform.position = new(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, 0);
 
@@ -203,20 +191,13 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
                 numLegsOnGround++;
             }
 
-            raycastedNewPos = GetNewTargetPosFromPoint(targetPoints[i].position);
+            LegObjects[i].raycastedNewPos = GetNewTargetPosFromPoint(targetPoints[i].position);
             //SUPER UGLY IMPLEMENTATION, FIX LATER
-            LegObjects[i].targetPos = raycastedNewPos;
-
-
-            /*if (LegObjects[i].checkDistanceToNextTarget(raycastedNewPos) + Vector3.Distance(LegObjects[i].currentPos, transform.position)
-               >= LegObjects[furthestLegFromTarget].distanceToNextTarget + Vector3.Distance(LegObjects[furthestLegFromTarget].currentPos, transform.position))
-            {
-                furthestLegFromTarget = i;
-            }*/
-
+            LegObjects[i].targetPos = LegObjects[i].raycastedNewPos;
 
             //Pretty ssure this updates something so if you dont call it per leg shit gets fucked
-            LegObjects[i].checkDistanceToNextTarget(raycastedNewPos);
+
+            LegObjects[i].CheckDistanceToNextTarget();
 
             if (LegObjects[i].realLength >= LegObjects[furthestLegFromTarget].realLength)
             {
@@ -226,23 +207,18 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         //print(furthestLegFromTarget);
 
         //Start iterating on the most distant leg
-        //for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++)
-        //int[] orderOfIteration = GetRandomizedIndicies(numLegs);
-
-        //Debug.Log(orderOfIteration[0] + " " + orderOfIteration[1] + " " + orderOfIteration[2] + " " + orderOfIteration[3]);
-
-        for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++) //for (int i = 0; i < numLegs; i++)
+        for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++)
         {
-            int index = i;//orderOfIteration[i];
+            int index = i;
             if (index >= numLegs) index -= numLegs;
 
             if (LegObjects[index].distanceToNextTarget >= maxDist && !LegObjects[index].movingLeg && numLegsOnGround > numLegsNeededOnGround)
             {
-                LegObjects[index].setNewLegMove(LegObjects[index].targetPos);
+                LegObjects[index].SetNewLegMove(LegObjects[index].targetPos);
                 numLegsOnGround--;
             }
 
-            LegObjects[index].updateLeg();
+            LegObjects[index].UpdateLeg();
 
             MoveBones(index);
             UpdateLegIK(index);
@@ -256,8 +232,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         if (numLegsOnGround == numLegs && LegObjects[furthestLegFromTarget].distanceToNextTarget >= maxRestDist)
         {
-            Debug.Log("move call correct");
-            LegObjects[furthestLegFromTarget].setNewLegMove(LegObjects[furthestLegFromTarget].targetPos);
+            LegObjects[furthestLegFromTarget].SetNewLegMove(LegObjects[furthestLegFromTarget].targetPos);
             numLegsOnGround--;
         }
 
@@ -275,15 +250,6 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
             currentBoidCountTotal += boidBehaviorScripts[i].numBoids;
         }
-    }
-
-    public bool CheckDistToNextTarget()
-    {
-        bool dist = Vector3.Distance(raycastedNewPos, FootPlaceholder.transform.position) >= maxDist;
-
-        //Maybe different distances?
-
-        return dist;
     }
 
     public Vector3 GetNewTargetPosFromPoint(Vector3 point)
@@ -314,12 +280,6 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     //ADD INVERSE KINEMATICS PLEASE FUTURE TY
 
     //Yeah i gotchu.
-    public void OnDrawGizmos()
-    {
-        var current = this.transform;
-        
-
-    }
 
     public void UpdateLegIK(int legIndex)
     {
@@ -432,19 +392,60 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         }
     }
 
-    public float CalculateBodyHeight()
+    public float CalculateBodyHeight(int priorityLeg = 100, int weight = 1)
     {
+        int samples = 3;
+        float sampleSpacing = .5f;
+
+        float startX = transform.position.x - (samples / 2 * sampleSpacing);
+        int j = 0;
+
+        float sumOfSampleY = 0;
+
+        for (int i = 0; i < samples; i++)
+        {
+            float currentSampleX = startX + (i * sampleSpacing);
+
+            RaycastHit2D hit = Physics2D.Raycast(new Vector2(currentSampleX, transform.position.y), Vector2.down, 100, LayerMask.GetMask("Wall"));
+
+            //if (hit == null) break;
+
+//            Debug.Log(i + " hit: " + hit.point.y);
+
+            j++;
+            sumOfSampleY += hit.point.y;
+        }
+
+        if (j == 0) return 0;
+
+        //Cast otherwise its int/int = int
+        float legDamagedMultiplier = easeOutQuint((float)currentBoidCountTotal / startingTotalBoids);
+        //Debug.Log("Sample" + (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier));
+        return (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier);
+        /*
         float averageLegHeight = 0;
         int numLegsInCalculation = 0;
-
+        int i = 0;
         foreach (LegObject legObject in this.LegObjects) 
         {
             if (!legObject.movingLeg)
             {
-                numLegsInCalculation++;
+                if (i == priorityLeg || Mathf.Abs(priorityLeg - i) <= 1)
+                {
+                    print(i);
+                    numLegsInCalculation += weight;
 
-                averageLegHeight += legObject.currentPos.y;
+                    averageLegHeight += legObject.raycastedNewPos.y * weight;
+                }
+                else
+                {
+                    averageLegHeight += legObject.currentPos.y;
+
+                    numLegsInCalculation++;
+                }
             }
+
+            i++;
         }
 
         averageLegHeight /= numLegsInCalculation;
@@ -452,7 +453,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         //Cast otherwise its int/int = int
         float legDamagedMultiplier = easeOutQuint((float) currentBoidCountTotal / startingTotalBoids);
 
-        return averageLegHeight + (averageBodyHeight * legDamagedMultiplier);
+        return averageLegHeight + (averageBodyHeight * legDamagedMultiplier);*/
     }
 
     float easeOutQuint(float x)
