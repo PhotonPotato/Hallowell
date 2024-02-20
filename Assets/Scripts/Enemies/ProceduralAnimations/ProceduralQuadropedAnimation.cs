@@ -31,6 +31,8 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         public float realLength = 0;
 
+        public bool thisLegAttacking = false;
+
         public LegObject(int id, int numJoints, float legYOffset = 1.5f, float legMoveSpeedTimePerUnit = .4f)
         {
             this.id = id;
@@ -68,10 +70,19 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         {
             if (!movingLeg) return;
 
+            //Seems like we need to keep updating the target pos for the legs to keep up - ty
+            if (!thisLegAttacking) targetPos = raycastedNewPos;
+
             float t = (Time.time - this.timeOfLastMove) / legMoveSpeedTimePerUnit;
 
             if (t >= 1)
             {
+                if (thisLegAttacking)
+                {
+                    thisLegAttacking = false;
+                    //Move leg back into locomotion
+                    SetNewLegMove(raycastedNewPos);
+                }
                 movingLeg = false;
 
                 return;
@@ -193,7 +204,6 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
             LegObjects[i].raycastedNewPos = GetNewTargetPosFromPoint(targetPoints[i].position);
             //SUPER UGLY IMPLEMENTATION, FIX LATER
-            LegObjects[i].targetPos = LegObjects[i].raycastedNewPos;
 
             //Pretty ssure this updates something so if you dont call it per leg shit gets fucked
 
@@ -214,7 +224,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
             if (LegObjects[index].distanceToNextTarget >= maxDist && !LegObjects[index].movingLeg && numLegsOnGround > numLegsNeededOnGround)
             {
-                LegObjects[index].SetNewLegMove(LegObjects[index].targetPos);
+                LegObjects[index].SetNewLegMove(LegObjects[index].raycastedNewPos);
                 numLegsOnGround--;
             }
 
@@ -232,7 +242,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         if (numLegsOnGround == numLegs && LegObjects[furthestLegFromTarget].distanceToNextTarget >= maxRestDist)
         {
-            LegObjects[furthestLegFromTarget].SetNewLegMove(LegObjects[furthestLegFromTarget].targetPos);
+            LegObjects[furthestLegFromTarget].SetNewLegMove(LegObjects[furthestLegFromTarget].raycastedNewPos);
             numLegsOnGround--;
         }
 

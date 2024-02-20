@@ -47,6 +47,12 @@ public class BoidfangManager : MonoBehaviour
     public float timeUntilInvestigation = 5f;
     public float timeUntilGiveUpInvestigation = 5f;
 
+    [Space]
+    public float timeToLightAttack = .5f;
+    public float lightAttackDist = 10f;
+    public float distToInitiateLightAttack = 6f;
+    public float attackCooldownTime = 3; //seconds
+
     //public float curiosityAdversaryDistanceFloor = 10f;
 
     [Header("Trackers")]
@@ -59,11 +65,16 @@ public class BoidfangManager : MonoBehaviour
     public float timeSinceLostLoS = 0;
     private Vector3 entityPositionAtLostLoS;
     private Vector3 initialEntityPos;
+    private float timeOfLastAttack = Mathf.NegativeInfinity;
+
+    private Vector3 posOfAdversaryOnAttack;
+    private int legOfAttack;
 
     [Header("Enemy Reactions")]
     public float enemyHunger = 0;
     public float anxiousness = 0;
     public bool investigating = false;
+    public bool attacking = false;
 
     #region Depricated E Vars
     public AnimationCurve aggressionVsMovementSpeed;
@@ -166,7 +177,16 @@ public class BoidfangManager : MonoBehaviour
 
         //Surge attack
 
+        //TESTING FOR ATTACK (real basic)
+        if (Vector3.Distance(transform.position, Adversary.position) < distToInitiateLightAttack && Time.time - timeOfLastAttack > attackCooldownTime)
+        {
+            OnAttack();
 
+            enemyHunger -= .3f;
+        }
+
+        //Shitty way to update this things attack
+        if (animationScript.LegObjects[legOfAttack].thisLegAttacking == false) attacking = false;
     }
 
     public void KillThisEnemy()
@@ -249,6 +269,11 @@ public class BoidfangManager : MonoBehaviour
         else
         {
             currentRawSpeedMult = 1f;
+        }
+
+        if (attacking)
+        {
+            currentRawSpeedMult = 0;
         }
     }
 
@@ -350,6 +375,53 @@ public class BoidfangManager : MonoBehaviour
 
     private void OnAttack()
     {
-        
+        if (attacking) return;
+
+        currentRawSpeedMult = 0;
+        attacking = true;
+
+        timeOfLastAttack = Time.time;
+
+        posOfAdversaryOnAttack = Adversary.position;
+
+
+        //Choose closest leg
+        int indexOfClosestLeg = -1;
+        float minDist = 100;
+
+        for (int i = 0; i < animationScript.numLegs; i++)
+        {
+            if (animationScript.LegObjects[i].movingLeg) continue;
+
+            float dist = Vector2.Distance(animationScript.LegObjects[i].currentPos, Adversary.position);
+
+            if (dist < minDist)
+            {
+                indexOfClosestLeg = i;
+                minDist = dist;
+                continue;
+            }
+        }
+
+        legOfAttack = indexOfClosestLeg;
+
+        //Get the position it should move to
+        if (minDist > lightAttackDist) minDist = lightAttackDist;
+
+        Vector3 attackEndPos = transform.position + (Vector3) (relativePlayerDirection * (minDist + 1.5f));
+
+        //Actually set up the attack
+        animationScript.LegObjects[legOfAttack].thisLegAttacking = true;
+        animationScript.LegObjects[legOfAttack].SetNewLegMove(attackEndPos);
+    }
+
+    public void HandleAttacking()
+    {
+        float attackLocalTime = Time.time - timeOfLastAttack;
+
+        //Normalize this time within the time to attack
+        attackLocalTime /= timeToLightAttack;
+
+
     }
 }
