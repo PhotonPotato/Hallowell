@@ -73,7 +73,8 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             //Seems like we need to keep updating the target pos for the legs to keep up - ty
             if (!thisLegAttacking) targetPos = raycastedNewPos;
 
-            float t = (Time.time - this.timeOfLastMove) / legMoveSpeedTimePerUnit;
+            //Make time to move half if attacking
+            float t = (Time.time - this.timeOfLastMove) / (legMoveSpeedTimePerUnit * (thisLegAttacking ? .5f : 1f));
 
             if (t >= 1)
             {
@@ -402,7 +403,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         }
     }
 
-    public float CalculateBodyHeight(int priorityLeg = 100, int weight = 1)
+    public float CalculateBodyHeight(int priorityLeg = 100, int weight = 1, float windUpOffset = 0)
     {
         int samples = 3;
         float sampleSpacing = .5f;
@@ -431,7 +432,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         //Cast otherwise its int/int = int
         float legDamagedMultiplier = easeOutQuint((float)currentBoidCountTotal / startingTotalBoids);
         //Debug.Log("Sample" + (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier));
-        return (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier);
+        return (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier) + windUpOffset;
         /*
         float averageLegHeight = 0;
         int numLegsInCalculation = 0;

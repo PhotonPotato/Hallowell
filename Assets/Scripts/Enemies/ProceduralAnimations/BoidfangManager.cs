@@ -52,8 +52,8 @@ public class BoidfangManager : MonoBehaviour
     public float lightAttackDist = 10f;
     public float distToInitiateLightAttack = 6f;
     public float attackCooldownTime = 3; //seconds
-
-    //public float curiosityAdversaryDistanceFloor = 10f;
+    public float attackWindUpTime = .5f; //seconds
+    public float attackWindUpHeight = 1.5f; //How high this entity will rise while winding up
 
     [Header("Trackers")]
     public Vector2 relativePlayerDirection;
@@ -66,6 +66,7 @@ public class BoidfangManager : MonoBehaviour
     private Vector3 entityPositionAtLostLoS;
     private Vector3 initialEntityPos;
     private float timeOfLastAttack = Mathf.NegativeInfinity;
+    private float timeOfLastWindUp = Mathf.Infinity;
 
     private Vector3 posOfAdversaryOnAttack;
     private int legOfAttack;
@@ -75,6 +76,7 @@ public class BoidfangManager : MonoBehaviour
     public float anxiousness = 0;
     public bool investigating = false;
     public bool attacking = false;
+    public bool windingUpForAttack = false;
 
     #region Depricated E Vars
     public AnimationCurve aggressionVsMovementSpeed;
@@ -171,18 +173,30 @@ public class BoidfangManager : MonoBehaviour
                     * EaseOutQuint((float)animationScript.currentBoidCountTotal / animationScript.startingTotalBoids)
                     * Time.deltaTime;
 
-        newPos.y += (animationScript.CalculateBodyHeight(relativePlayerDirection.x > 0 ? 0 : 5, 20) - newPos.y) / 10;
+        //Calc in a hiehgt offset if it is winding up
+        newPos.y += (animationScript.CalculateBodyHeight(relativePlayerDirection.x > 0 ? 0 : 5, 20, windingUpForAttack ? EaseOutQuint((Time.time - timeOfLastWindUp) / attackWindUpTime) * attackWindUpHeight : 0) - newPos.y) / 10;
 
         transform.position = newPos;
 
         //Surge attack
 
         //TESTING FOR ATTACK (real basic)
-        if (Vector3.Distance(transform.position, Adversary.position) < distToInitiateLightAttack && Time.time - timeOfLastAttack > attackCooldownTime)
+        if (Vector3.Distance(transform.position, Adversary.position) < distToInitiateLightAttack && Time.time - timeOfLastAttack > attackCooldownTime && windingUpForAttack == false)
         {
+            //Trigger wind up
+            windingUpForAttack = true;
+            timeOfLastWindUp = Time.time;
+        }
+
+        if (windingUpForAttack && Time.time - timeOfLastWindUp >= attackWindUpTime)
+        {
+            //Now we can attack
             OnAttack();
 
             enemyHunger -= .3f;
+
+            //Reset wind up
+            windingUpForAttack = false;
         }
 
         //Shitty way to update this things attack
@@ -271,9 +285,10 @@ public class BoidfangManager : MonoBehaviour
             currentRawSpeedMult = 1f;
         }
 
-        if (attacking)
+        if (attacking || windingUpForAttack)
         {
             currentRawSpeedMult = 0;
+            //currentSmoothedSpeedMult;
         }
     }
 
@@ -408,20 +423,10 @@ public class BoidfangManager : MonoBehaviour
         //Get the position it should move to
         if (minDist > lightAttackDist) minDist = lightAttackDist;
 
-        Vector3 attackEndPos = transform.position + (Vector3) (relativePlayerDirection * (minDist + 1.5f));
+        Vector3 attackEndPos = transform.position + (Vector3) (relativePlayerDirection * (minDist + 3f));
 
         //Actually set up the attack
         animationScript.LegObjects[legOfAttack].thisLegAttacking = true;
         animationScript.LegObjects[legOfAttack].SetNewLegMove(attackEndPos);
-    }
-
-    public void HandleAttacking()
-    {
-        float attackLocalTime = Time.time - timeOfLastAttack;
-
-        //Normalize this time within the time to attack
-        attackLocalTime /= timeToLightAttack;
-
-
     }
 }
