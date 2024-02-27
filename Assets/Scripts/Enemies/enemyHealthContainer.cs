@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class enemyHealthContainer : MonoBehaviour
+public class EnemyHealthContainer : HealthContainer
 {
     //This is just a universal container to store health in the game.
     public int objID;
@@ -13,9 +13,6 @@ public class enemyHealthContainer : MonoBehaviour
     [System.NonSerialized] public bool inactive = false;
     public float respawnTime = 10;
     [System.NonSerialized] public float respawnTimer = 0;
-
-    public float maxHealth;
-    public float currentHealth;
 
     //Health bar slider vars
     public bool showHealthBarOnDealDamage = false;
@@ -52,7 +49,7 @@ public class enemyHealthContainer : MonoBehaviour
     }
 
     //A public mehtod to deal damage
-    public virtual void DealDamage(float damage)
+    public override void DealDamage(float damage)
     {
         currentHealth -= damage;
 

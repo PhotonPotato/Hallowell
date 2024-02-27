@@ -180,15 +180,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41382816ae7554845a0952ebe9f43fd9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  type: 1
+  maxHealth: 50
+  currentHealth: 50
   objID: 0
   destroyOnNoHealth: 1
   respawnWithTime: 0
   respawnTime: 10
-  maxHealth: 50
-  currentHealth: 50
   showHealthBarOnDealDamage: 0
   canvasWithHealthBar: {fileID: 4501182517739621250, guid: fe46aa24f6d0d45a4a348f2b435cd452, type: 3}
+  healthBarScale: {x: 0.05, y: 0.05, z: 0.05}
   damageDealt: 10
+  DamageCallbackToParent: 0
 --- !u!114 &836095336624629951
 MonoBehaviour:
   m_ObjectHideFlags: 0

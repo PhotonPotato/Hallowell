@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class proceduralQuadropedHealthContainer : enemyHealthContainer
+public class proceduralQuadropedHealthContainer : EnemyHealthContainer
 {
     //Number of boids to destroy per hit point
     public float boidToHealthRatio = 0;
     public ProceduralQuadropedAnimation parentQuadropedScript;
+
+    public float lightAttackDamage = 20f;
+    public bool performingLightAttack = false;
 
     //NOTE: in this case the obj id stores the sibling index
 
@@ -72,7 +75,7 @@ public class proceduralQuadropedHealthContainer : enemyHealthContainer
                 damageAmount = currentHealth;
             }
 
-            transform.parent.parent.GetComponentInChildren<enemyHealthContainer>().DealDamage(damageAmount);
+            transform.parent.parent.GetComponentInChildren<EnemyHealthContainer>().DealDamage(damageAmount);
 
             //Now to destroy boids
             parentQuadropedScript.boidBehaviorScripts[objID].DestroyBoids((int) (damageAmount * boidToHealthRatio));

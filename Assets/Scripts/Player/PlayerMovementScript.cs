@@ -404,7 +404,7 @@ public class PlayerMovementScript : MonoBehaviour
                 if (col.gameObject.layer == enemyLayer && col.gameObject.tag == "BouncableEnemy")
                 {
                     //Contact point exists on top of object.
-                    enemyHealthContainer container = col.gameObject.GetComponent<enemyHealthContainer>();
+                    EnemyHealthContainer container = col.gameObject.GetComponent<EnemyHealthContainer>();
                     container.DealDamage(5);
 
                     //Detect stomp jump

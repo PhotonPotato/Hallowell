@@ -16,7 +16,7 @@ public class PlayerManager : MonoBehaviour
     public float invincibilityTime;
 
     [NonSerialized]
-    public playerHealthContainer playerHealth;
+    public HealthContainer playerHealth;
 
     //Effects
     public GameObject invincibilityAura;
@@ -43,7 +43,7 @@ public class PlayerManager : MonoBehaviour
 
         rb = GetComponent<Rigidbody2D>();
 
-        playerHealth = GetComponent<playerHealthContainer>();
+        playerHealth = GetComponent<HealthContainer>();
 
         playerInventoryManager = FindObjectOfType<InventoryUIManager>();
     }
@@ -135,7 +135,7 @@ public class PlayerManager : MonoBehaviour
 
     public void UpdateHealthBar()
     {
-        float currentPlayerHealth = playerHealth.getHealth();
+        float currentPlayerHealth = playerHealth.GetHealth();
 
         healthBarSlider.value = currentPlayerHealth;
 
@@ -148,9 +148,19 @@ public class PlayerManager : MonoBehaviour
     {
         if (invincibilityTimer > 0) return;
 
-        float damageAmount = obj.GetComponentInChildren<enemyHealthContainer>().damageDealt;
+        EnemyHealthContainer container = obj.GetComponentInChildren<EnemyHealthContainer>();
+        float damageAmount = container.damageDealt;
 
-        playerHealth.dealDamage(damageAmount);
+        if (container.type == HealthContainerType.ProceduralQuadropedLeg)
+        {
+            if ((container as proceduralQuadropedHealthContainer).performingLightAttack)
+            {
+                //Then deal light attack damage, not just touch damage
+                damageAmount = (container as proceduralQuadropedHealthContainer).lightAttackDamage;
+            }
+        }
+
+        playerHealth.DealDamage(damageAmount);
 
         //Add iFrames and timer
         invincibilityTimer = invincibilityTime;
@@ -160,7 +170,7 @@ public class PlayerManager : MonoBehaviour
     {
         if (invincibilityTimer > 0 && !forceDamage) return;
 
-        playerHealth.dealDamage(damageAmount);
+        playerHealth.DealDamage(damageAmount);
 
         //Add iFrames and timer
         invincibilityTimer = invincibilityTime;

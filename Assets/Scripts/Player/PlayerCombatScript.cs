@@ -17,7 +17,7 @@ public class PlayerCombatScript : MonoBehaviour
 
     public WeaponItem defaultStartItem;
 
-    [NonSerialized] public List<enemyHealthContainer> healthContainerCache;
+    [NonSerialized] public List<EnemyHealthContainer> healthContainerCache;
 
     public void Start()
     {
@@ -32,7 +32,7 @@ public class PlayerCombatScript : MonoBehaviour
         slotManager.combatManager = this;
         animationHandler.combatManager = this;
 
-        healthContainerCache = new List<enemyHealthContainer>();
+        healthContainerCache = new List<EnemyHealthContainer>();
     }
 
     public void Update()
@@ -57,9 +57,9 @@ public class PlayerCombatScript : MonoBehaviour
             //Check for valid colliders and their objects
             foreach (Collider2D col in cols)
             {
-                enemyHealthContainer enemyHealthContainer;
+                EnemyHealthContainer enemyHealthContainer;
 
-                if (col.gameObject.TryGetComponent<enemyHealthContainer>(out enemyHealthContainer))
+                if (col.gameObject.TryGetComponent<EnemyHealthContainer>(out enemyHealthContainer))
                 {
                     //Make sure this collider hasn't been damaged before
                     if (healthContainerCache.Contains(enemyHealthContainer)) return;

@@ -8,6 +8,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
     public class LegObject
     {
         public LineRenderer legRender;
+        public GameObject ColObj { private get; set; }
 
         public Vector3[] LegPoints;
         public Vector3 targetPos;
@@ -81,6 +82,10 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
                 if (thisLegAttacking)
                 {
                     thisLegAttacking = false;
+
+                    //Reset health container (no clue why i put teh light attack indicator there)
+                    SetAttackState(false);
+
                     //Move leg back into locomotion
                     SetNewLegMove(raycastedNewPos);
                 }
@@ -110,12 +115,18 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
             return output;
         }
+
+        public void SetAttackState(bool lightAttack)
+        {
+            ColObj.GetComponent<proceduralQuadropedHealthContainer>().performingLightAttack = lightAttack;
+        }
     }
 
     [Header("References")]
     public Transform[] targetPoints;
     public GameObject LegRendererBin;
     public LineRenderer[] LegRederers;
+    public BoidfangManager BoidfangManager;
 
     public GameObject FootPlaceholder;
 
@@ -169,6 +180,8 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
     private void Start()
     {
+        BoidfangManager = GetComponent<BoidfangManager>();
+
         //LegRederers = LegRendererBin.GetComponentsInChildren<LineRenderer>();
         InitLegs();
         completeLength = boneLength * legLength;
@@ -316,7 +329,12 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
             //Instantiate the leg collider renderers
             LegColliderObjects[i] = Instantiate(LegColliderObjPrefab, Vector3.zero, Quaternion.identity, LegColliderBin);
             LegColliderObjects[i].GetComponent<ProceduralQuadropedLegCollisionHandler>().Init(this, i);
-            LegColliderObjects[i].GetComponent<enemyHealthContainer>().objID = i;
+
+            proceduralQuadropedHealthContainer container = LegColliderObjects[i].GetComponent<proceduralQuadropedHealthContainer>();
+            container.objID = i;
+            container.lightAttackDamage = BoidfangManager.damageOfLightAttack;
+
+            LegObjects[i].ColObj = LegColliderObjects[i];
         }
     }
 
@@ -419,9 +437,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
             RaycastHit2D hit = Physics2D.Raycast(new Vector2(currentSampleX, transform.position.y), Vector2.down, 100, LayerMask.GetMask("Wall"));
 
-            //if (hit == null) break;
-
-//            Debug.Log(i + " hit: " + hit.point.y);
+            if (hit.collider == null) break;
 
             j++;
             sumOfSampleY += hit.point.y;
@@ -433,38 +449,6 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         float legDamagedMultiplier = easeOutQuint((float)currentBoidCountTotal / startingTotalBoids);
         //Debug.Log("Sample" + (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier));
         return (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier) + windUpOffset;
-        /*
-        float averageLegHeight = 0;
-        int numLegsInCalculation = 0;
-        int i = 0;
-        foreach (LegObject legObject in this.LegObjects) 
-        {
-            if (!legObject.movingLeg)
-            {
-                if (i == priorityLeg || Mathf.Abs(priorityLeg - i) <= 1)
-                {
-                    print(i);
-                    numLegsInCalculation += weight;
-
-                    averageLegHeight += legObject.raycastedNewPos.y * weight;
-                }
-                else
-                {
-                    averageLegHeight += legObject.currentPos.y;
-
-                    numLegsInCalculation++;
-                }
-            }
-
-            i++;
-        }
-
-        averageLegHeight /= numLegsInCalculation;
-
-        //Cast otherwise its int/int = int
-        float legDamagedMultiplier = easeOutQuint((float) currentBoidCountTotal / startingTotalBoids);
-
-        return averageLegHeight + (averageBodyHeight * legDamagedMultiplier);*/
     }
 
     float easeOutQuint(float x)

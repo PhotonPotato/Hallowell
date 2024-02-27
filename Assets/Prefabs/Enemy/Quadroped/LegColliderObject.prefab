@@ -82,14 +82,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e76dfa3725a945c599e1a75c8547c67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  type: 2
+  maxHealth: 140
+  currentHealth: 140
   objID: 0
   destroyOnNoHealth: 0
   respawnWithTime: 0
   respawnTime: 10
-  maxHealth: 100
-  currentHealth: 100
   showHealthBarOnDealDamage: 0
   canvasWithHealthBar: {fileID: 0}
   healthBarScale: {x: 0.05, y: 0.05, z: 0.05}
   damageDealt: 10
   DamageCallbackToParent: 0
+  boidToHealthRatio: 0
+  parentQuadropedScript: {fileID: 0}

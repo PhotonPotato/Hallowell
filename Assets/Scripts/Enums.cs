@@ -33,3 +33,10 @@ public enum WeaponTag
     LightAttack,
     HeavyAttack
 }
+
+public enum HealthContainerType
+{
+    Player,
+    Enemy,
+    ProceduralQuadropedLeg
+}
