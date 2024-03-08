@@ -26,7 +26,6 @@ public class BoidfangManager : MonoBehaviour
     public struct HorizontalScanResults
     {
         public float? dist;
-        public float? availableY;
     }
 
     [System.NonSerialized] public ProceduralQuadropedAnimation animationScript;
@@ -44,6 +43,11 @@ public class BoidfangManager : MonoBehaviour
     public float currentRawSpeedMult = 1;
     public float currentSmoothedSpeedMult = 1;
 
+    [Space]//Scan vars
+    public float duckOffset;
+    public int numberOfRaysInScan = 8;
+    public float scanCrosssectionDistance = 1.5f;
+
     [Space]
     public float hungerRate = .5f;
     public float randomPositionWaypointOffsetMaximum = 10;
@@ -52,6 +56,9 @@ public class BoidfangManager : MonoBehaviour
 
     public float timeUntilInvestigation = 5f;
     public float timeUntilGiveUpInvestigation = 5f;
+
+    [Space]
+    public float m_MinimumBoidfangCrouchHeightYOffest = 1;
 
     [Space]
     public float timeToLightAttack = .5f;
@@ -78,6 +85,8 @@ public class BoidfangManager : MonoBehaviour
     private Vector3 posOfAdversaryOnAttack;
     private int legOfAttack;
     [System.NonSerialized] public float m_direction;
+    [System.NonSerialized] public float? m_avaibaleYPos;
+    [System.NonSerialized] public float averageDistanceToObstacles;
 
     [Header("Enemy Reactions")]
     public float enemyHunger = 0;
@@ -154,12 +163,27 @@ public class BoidfangManager : MonoBehaviour
 
         m_direction = Mathf.Sign(desiredStationaryPosition.x - transform.position.x);
 
+        //Speed mult based on obstacles
+        //Avoid walls in front of object
+        float speedMulitplierBasedOnScanResults = DistToObstacleSpeedFalloff.Evaluate(ScanHorizontalForObstacles(scanCrosssectionDistance, numberOfRaysInScan, -.5f, ref m_avaibaleYPos, out averageDistanceToObstacles) ? 10 : averageDistanceToObstacles);
+
+        //If its getting pretty slow and theres an opening, cap the min speed
+        if (m_avaibaleYPos != null && speedMulitplierBasedOnScanResults < .5f)
+        {
+            //So it still moves just slower
+            Debug.Log("setting to .5");
+            speedMulitplierBasedOnScanResults = .5f;
+        }else if (m_avaibaleYPos == null)
+        {
+            m_avaibaleYPos = 0;
+        }
+
         float deltaX = maxBodyMoveSpeed
                     * m_direction //Direction to desired pos
                     * currentSmoothedSpeedMult
                     * distanceFalloffMultiplier //Speed falloff as approaching adversary
-                    * DistToObstacleSpeedFalloff.Evaluate(GetAvgHorizScanDistance(1, 4) ?? 10) //Avoid walls in fron of object
-                    * EaseOutQuint((float)animationScript.currentBoidCountTotal / animationScript.startingTotalBoids)
+                    * speedMulitplierBasedOnScanResults
+                    * EaseOutQuint((float)animationScript.currentBoidCountTotal / animationScript.startingTotalBoids) //Speed mult based on number of boids left
                     * Time.deltaTime;
         
 
@@ -167,7 +191,9 @@ public class BoidfangManager : MonoBehaviour
         newPos.x += deltaX;
 
         //Calc in a hiehgt offset if it is winding up
-        newPos.y += (animationScript.CalculateBodyHeight(relativePlayerDirection.x > 0 ? 0 : 5, 20, windingUpForAttack ? EaseInOutQuint((Time.time - timeOfLastWindUp) / attackWindUpTime) * attackWindUpHeight : 0) - newPos.y) / 10;
+        newPos.y += (animationScript.CalculateBodyHeight(windingUpForAttack ? EaseInOutQuint((Time.time - timeOfLastWindUp) / attackWindUpTime) * attackWindUpHeight : 0, (float) m_avaibaleYPos)
+                    - ((float)m_avaibaleYPos)
+                    - newPos.y) / 10;
 
         transform.position = newPos;
 
@@ -358,13 +384,19 @@ public class BoidfangManager : MonoBehaviour
         animationScript.LegObjects[legOfAttack].SetAttackState(true);
     }
 
-    public float? GetAvgHorizScanDistance(float horizontalScanArea, int horizontalPrecision)
+    public bool ScanHorizontalForObstacles(float horizontalScanArea, int horizontalPrecision, float originYOffset, ref float? yWithNoObstacles, out float averageScanResultDistance)
     {
-        Vector2 horizontalRayOrigin = (Vector2) transform.position - new Vector2(0, horizontalScanArea / 2);
+        //Add back the last yWithNoObstacles so that we are scannign from a consistent y
+        //(otherwise scans whould find diffrerent y's resulting in a jitter
+        Vector2 horizontalRayOrigin = (Vector2) transform.position - new Vector2(0, horizontalScanArea / 2) + new Vector2(0, originYOffset + yWithNoObstacles.GetValueOrDefault());
 
-        int horizontalHits = 0;
-        float totalHitDistance = 0;
-        float horizontalScanIncrements = horizontalScanArea / horizontalPrecision;
+        int horizontalHits = 0; //Number of rays that return hits on ground. Used to calculate average hit distance later
+        float totalHitDistance = 0; //Sum of all distance to hits. Used to calculate average distance later
+        float horizontalScanIncrements = horizontalScanArea / horizontalPrecision; //The y difference between scans
+
+        yWithNoObstacles = null; //Reset this to null (arbitrary, probably dont need to, clean later)
+
+        //Horizontal Precision refers to the density/amt of rays in a scan.
 
         for (int i = 0; i < horizontalPrecision; i++)
         {
@@ -372,12 +404,28 @@ public class BoidfangManager : MonoBehaviour
 
             if (hit.collider?.gameObject.tag == "Ground")
             {
+                //If there is a "Ground" object there, add to the hit tally and also the sum of all of the hit distances.
                 horizontalHits++;
                 totalHitDistance += hit.distance;
             }
+            else
+            {
+                //If there is nothing there, mark this y as "free" to move in
+                yWithNoObstacles = horizontalRayOrigin.y;
+            }
 
+            //Update the scan origin of the next ray. Move it by the specified increment
             horizontalRayOrigin.y += horizontalScanIncrements;
         }
-        return horizontalHits == 0 ? null : totalHitDistance / horizontalHits;
+
+        //Find the average distance to hits (excludes rays that didn't hit anything)
+        averageScanResultDistance = horizontalHits == 0 ? Mathf.Infinity : totalHitDistance / horizontalHits;
+
+        if (horizontalHits == 0) yWithNoObstacles = 0; //If nothing is hit, then there is no needer height adjustment to find "free" space
+        else yWithNoObstacles = transform.position.y - yWithNoObstacles + duckOffset; //Else, set the hit to the y offset from player + an offset
+
+        Debug.Log(Time.frameCount + " y with no ob: " + yWithNoObstacles);
+
+        return horizontalHits == 0; //return true if there is nothing there
     }
 }

@@ -421,7 +421,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         }
     }
 
-    public float CalculateBodyHeight(int priorityLeg = 100, int weight = 1, float windUpOffset = 0)
+    public float CalculateBodyHeight(float windUpOffset = 0, float availableYPosition = 0)
     {
         int samples = 3;
         float sampleSpacing = .5f;
@@ -448,6 +448,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
         //Cast otherwise its int/int = int
         float legDamagedMultiplier = easeOutQuint((float)currentBoidCountTotal / startingTotalBoids);
         //Debug.Log("Sample" + (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier));
+        Debug.Log("Available " + availableYPosition);
         return (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier) + windUpOffset;
     }
 
