@@ -14,7 +14,8 @@ public class PlayerMovementScript : MonoBehaviour
     [Space] 
     public float playerSpeed;
     public float effectedPlayerSpeed;
-    public float xInput;
+    public float rawXInput;
+    public float smoothedXInput;
     public float yInput;
     public float xInputMin;
     public float xVel;
@@ -115,8 +116,8 @@ public class PlayerMovementScript : MonoBehaviour
 
     public void FixedUpdate()
     {
-        xInput = Input.GetAxis("Horizontal");
-        yInput = Input.GetAxis("Vertical");
+        smoothedXInput = Input.GetAxis("Horizontal");
+        yInput = Input.GetAxisRaw("Vertical");
 
         //Run some good ol ground detection.
         onGround = detectGround();
@@ -126,12 +127,12 @@ public class PlayerMovementScript : MonoBehaviour
         //Slowly bring back input if there is a wall jump in action (with a slight time offset to start the dampeneing midway into the pushoff)
         if (Time.time - timePushedOff < 1)
         {
-            xInput *= 1 - Mathf.Pow(.345f, (Time.time - timePushedOff) * 9.4f);
+            smoothedXInput *= 1 - Mathf.Pow(.345f, (Time.time - timePushedOff) * 9.4f);
         }
 
-        if (Mathf.Abs(xInput) > xInputMin)
+        if (Mathf.Abs(smoothedXInput) > xInputMin)
         {
-            xVel = xInput * effectedPlayerSpeed;
+            xVel = smoothedXInput * effectedPlayerSpeed;
         }
         else
         {

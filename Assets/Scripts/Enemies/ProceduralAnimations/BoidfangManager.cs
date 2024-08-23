@@ -424,7 +424,8 @@ public class BoidfangManager : MonoBehaviour
         if (horizontalHits == 0) yWithNoObstacles = 0; //If nothing is hit, then there is no needer height adjustment to find "free" space
         else yWithNoObstacles = transform.position.y - yWithNoObstacles + duckOffset; //Else, set the hit to the y offset from player + an offset
 
-        Debug.Log(Time.frameCount + " y with no ob: " + yWithNoObstacles);
+        //DELETE THIS
+        //Debug.Log(Time.frameCount + " y with no ob: " + yWithNoObstacles);
 
         return horizontalHits == 0; //return true if there is nothing there
     }
