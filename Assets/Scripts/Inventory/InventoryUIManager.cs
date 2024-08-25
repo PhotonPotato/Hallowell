@@ -41,14 +41,21 @@ public class InventoryUIManager : MonoBehaviour
         playerInventory = new PlayerInventory(this);
         playerMan = FindObjectOfType<PlayerManager>();
 
-        defaultHealthBarPos = playerMan.healthBarSlider.gameObject.transform.position;
+        defaultHealthBarPos = playerMan.healthBarSlider.gameObject.transform.localPosition;
     }
 
     void Update()
     {
         ItemDetectionHandler();
 
-        playerMan.healthBarSlider.gameObject.transform.position = Camera.main.WorldToScreenPoint(Vector3.Scale(Camera.main.ScreenToWorldPoint(defaultHealthBarPos), new Vector3(1, inventoryPanelOpen ? -1 : 1, 1)));
+        //playerMan.healthBarSlider.gameObject.transform.position = Camera.main.WorldToScreenPoint(
+        //                                                      Vector3.Scale(Camera.main.ScreenToWorldPoint(defaultHealthBarPos),
+        //                                                  new Vector3(1, inventoryPanelOpen ? -1 : 1,
+        //                                              1)));
+
+        playerMan.healthBarSlider.gameObject.transform.localPosition = Vector3.Scale(defaultHealthBarPos, new Vector3(1, inventoryPanelOpen ? -1 : 1, 1));
+
+        Debug.Log(playerMan.healthBarSlider.gameObject.transform.position);
     }
 
     public void OpenInventoryPanel()
