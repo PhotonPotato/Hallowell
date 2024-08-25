@@ -5,9 +5,13 @@ using UnityEngine.Assertions.Must;
 
 public class floatingStationaryAI : MonoBehaviour
 {
+    [Header("Refs")]
     public Transform originTransform;
+    public Animator animator;
+
     private Vector3 originPos;
 
+    [Header("Settings/Trackers")]
     public Vector2 velocity;
     public float maxVelocityX = 5;
     public float maxVelocityY = 5;
@@ -23,9 +27,10 @@ public class floatingStationaryAI : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
 
         noiseSampleSeed = Random.Range(0, 1000000);
-
+        
         if (originTransform == null) originPos= transform.position;
     }
 

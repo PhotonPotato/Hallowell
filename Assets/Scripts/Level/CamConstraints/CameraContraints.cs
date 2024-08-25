@@ -13,6 +13,7 @@ public class CameraContraints : ScriptableObject
     public bool useSpeedSmoothing;
 
     public float zoom = 21.25774f;
+    public float zPos = -15.2f;
     public float zoomSpeed = 10;
 
     public float speed = 10;

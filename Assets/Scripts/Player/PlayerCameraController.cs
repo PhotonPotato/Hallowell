@@ -26,7 +26,7 @@ public class PlayerCameraController : MonoBehaviour
 
     public void FixedUpdate()
     {
-        Vector2 camPos = new Vector2(mainCam.position.x, mainCam.position.y);
+        Vector2 camPos = new Vector3(mainCam.position.x, mainCam.position.y);
         Vector2 pPos = new Vector2(playerPos.position.x, playerPos.position.y);
 
         playerVel.x = movementScript.xVel;
@@ -43,15 +43,14 @@ public class PlayerCameraController : MonoBehaviour
 
         camPos += (desiredPos - camPos) / currentCamSpeed;
 
-        //Add constraints if its not using desired posCam.
+        float cameraZ = mainCam.transform.position.z;
 
-        mainCam.position = camPos;
+        cameraZ += (camConstraints.zPos - mainCam.position.z) / camConstraints.zoomSpeed;
 
-        //Set the camera z to -10.
-        mainCam.position += new Vector3(0, 0, -10);
+        mainCam.position = new Vector3(camPos.x, camPos.y, cameraZ);
 
         //Set the zoom
-        Camera.main.orthographicSize += (camConstraints.zoom - Camera.main.orthographicSize) / camConstraints.zoomSpeed;
+        //Camera.main.orthographicSize += (camConstraints.zoom - Camera.main.orthographicSize) / camConstraints.zoomSpeed;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)

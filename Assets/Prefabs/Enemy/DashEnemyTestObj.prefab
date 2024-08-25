@@ -192,6 +192,7 @@ MonoBehaviour:
   healthBarScale: {x: 0.05, y: 0.05, z: 0.05}
   damageDealt: 10
   DamageCallbackToParent: 0
+  SetDamageTriggerInAnimator: 1
 --- !u!114 &836095336624629951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,6 +206,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   originTransform: {fileID: 0}
+  animator: {fileID: 0}
   velocity: {x: 0, y: 0}
   maxVelocityX: 5
   maxVelocityY: 5

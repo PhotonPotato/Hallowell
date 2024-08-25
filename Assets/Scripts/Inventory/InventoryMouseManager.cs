@@ -10,6 +10,7 @@ public class InventoryMouseManager : MonoBehaviour
 
     Vector3 mousePos;
     public Vector3 labelPosOffset;
+    public Transform mouseLabelParent;
     public Text mouseLabel;
     public LineRenderer mouseLine;
     bool onSlot = false;
@@ -46,7 +47,7 @@ public class InventoryMouseManager : MonoBehaviour
         //print(UIMan.playerInventory.playerMaterialInventory.Count);
         mousePos = Input.mousePosition + labelPosOffset;
 
-        mouseLabel.gameObject.transform.position = mousePos;
+        mouseLabelParent.position = mousePos;
 
         //Update where the image sits nad its visibility
         mouseContainerImage.gameObject.transform.position = mousePos;
@@ -132,7 +133,7 @@ public class InventoryMouseManager : MonoBehaviour
 
                     slot.ClearSlot(false);
 
-                    mouseLabel.gameObject.SetActive(false);
+                    mouseLabelParent.gameObject.SetActive(false);
                     mouseLine.gameObject.SetActive(false);
 
                     if (!onCrockpotSlot & !onOutputSlot)
@@ -258,7 +259,7 @@ public class InventoryMouseManager : MonoBehaviour
         if (item.getItemName() == null) return;
 
         mouseLabel.text = item.getItemName();
-        mouseLabel.gameObject.SetActive(true);
+        mouseLabelParent.gameObject.SetActive(true);
         
         mouseLine.gameObject.SetActive(true);
     }
@@ -279,7 +280,7 @@ public class InventoryMouseManager : MonoBehaviour
         onSlot = false;
 
         //No need to check if item exists, just hide the label and line
-        mouseLabel.gameObject.SetActive(false);
+        mouseLabelParent.gameObject.SetActive(false);
         mouseLine.gameObject.SetActive(false);
     }
 

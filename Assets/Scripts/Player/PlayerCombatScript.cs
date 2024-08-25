@@ -48,6 +48,8 @@ public class PlayerCombatScript : MonoBehaviour
             }
         }
 
+        //Update movement restriction in 
+
         //Check for weapon active in swing
         if (animationHandler.attackDealingDamage)
         {

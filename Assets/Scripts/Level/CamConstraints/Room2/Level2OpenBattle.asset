@@ -18,5 +18,6 @@ MonoBehaviour:
   yMax: -12
   useSpeedSmoothing: 1
   zoom: 35.6
+  zPos: -31
   zoomSpeed: 25
   speed: 50

@@ -27,6 +27,8 @@ public class EnemyHealthContainer : HealthContainer
     //CLEAN THIS PLEASE
     public bool DamageCallbackToParent = false;
 
+    public bool SetDamageTriggerInAnimator = false;
+
     private void Update()
     {
         if (healthBarCreated) barObj.GetComponentInChildren<Slider>().value = currentHealth;
@@ -52,6 +54,8 @@ public class EnemyHealthContainer : HealthContainer
     public override void DealDamage(float damage)
     {
         currentHealth -= damage;
+
+        if (SetDamageTriggerInAnimator) GetComponent<Animator>().SetTrigger("EnemyHit");
 
         if (respawnWithTime && currentHealth <= 0)
         {

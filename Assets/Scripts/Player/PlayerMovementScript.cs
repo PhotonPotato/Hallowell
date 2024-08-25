@@ -43,7 +43,8 @@ public class PlayerMovementScript : MonoBehaviour
     public float detectionOffsetY;
     public float detectionWidth;
     public float detectionHeight;
-    public bool onGround;
+    public bool isOnGroundCayoteTime;
+    public bool isOnGroundRaw;
     public bool isJumping;
     public float cayoteTime = .1f;
     float cayoteTimer;
@@ -51,6 +52,7 @@ public class PlayerMovementScript : MonoBehaviour
 
     //Wall jump vars.
     public bool onWall;
+    public bool onWallRaw;
     public int wallDir;
     public float gravityMultOnWall;
     public float wallDetectionRange;
@@ -69,6 +71,8 @@ public class PlayerMovementScript : MonoBehaviour
     ParticleSystem runningEffects;
     ParticleSystem jumpEffect;
     ParticleSystem stompBloodEffect;
+    ParticleSystem footstepEffect;
+    TrailRenderer speedTrailRenderer;
     [Space]
 
     //Enemy stomp detection (and stomp slash/jump mechanic)
@@ -77,6 +81,7 @@ public class PlayerMovementScript : MonoBehaviour
     public Vector2 stompDetectionOffset;
     public LayerMask stompLayers;
     public float bounceSpeedBoostTime;
+    private bool bounceSpeedBoostEnabled = false;
     float bounceSpeedBoostTimer = 0;
     float stompCayoteTimer = 0;
 
@@ -97,6 +102,8 @@ public class PlayerMovementScript : MonoBehaviour
         runningEffects = GetComponentsInChildren<ParticleSystem>()[1];
         jumpEffect = GetComponentsInChildren<ParticleSystem>()[2];
         stompBloodEffect = GetComponentsInChildren<ParticleSystem>()[3];
+        footstepEffect = GetComponentsInChildren<ParticleSystem>()[4];
+        speedTrailRenderer = GetComponentsInChildren<TrailRenderer>()[0];
 
         isJumping = false;
 
@@ -106,7 +113,7 @@ public class PlayerMovementScript : MonoBehaviour
     public void Update()
     {
         //Timers.
-        if (!(onGround & isJumping && jumpTimer <= 0)) jumpTimer -= Time.deltaTime;
+        if (!(isOnGroundCayoteTime & isJumping && jumpTimer <= 0)) jumpTimer -= Time.deltaTime;
         if (pushOffTimer > 0) pushOffTimer -= Time.deltaTime;
 
         //Update cayote-time timer
@@ -120,9 +127,13 @@ public class PlayerMovementScript : MonoBehaviour
         yInput = Input.GetAxisRaw("Vertical");
 
         //Run some good ol ground detection.
-        onGround = detectGround();
+        isOnGroundCayoteTime = detectGround();
+        onWallRaw = detectWall(1);
 
-        if (onGround) onWall = false;
+        if (isOnGroundCayoteTime) onWall = false;
+
+        if (bounceSpeedBoostEnabled) effectedPlayerSpeed = playerSpeed + stompBounceSpeedBoost;
+        else effectedPlayerSpeed = playerSpeed;
 
         //Slowly bring back input if there is a wall jump in action (with a slight time offset to start the dampeneing midway into the pushoff)
         if (Time.time - timePushedOff < 1)
@@ -140,6 +151,9 @@ public class PlayerMovementScript : MonoBehaviour
             xVel *= drag;
         }
 
+        //Turn on the speed trail if the effected speed is greater than default
+        speedTrailRenderer.emitting = effectedPlayerSpeed > playerSpeed;
+        
         //make sure to reset x velocity if we are on the wall (unless the xvel is away from the wall)
         if (onWall && xVel * wallDir > 0) xVel = 0;
 
@@ -152,11 +166,14 @@ public class PlayerMovementScript : MonoBehaviour
             jumpButtonReset = true;
         }
 
+        //Turn on or off the speed boost based on when you touch something
+        if (bounceSpeedBoostEnabled && (isOnGroundRaw || onWall)) bounceSpeedBoostEnabled = false;
+
         //Update jump buffer
         if (jumpButton && (jumpButtonReset || (Time.time - jumpInputBuffer < 0.05 && Time.time - jumpInputBuffer != Mathf.NegativeInfinity))) jumpInputBuffer = Time.time;
 
         //Detect jump condition
-        if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) && (onGround || onWall) && (!isJumping || jumpFromWallBase) && jumpButtonReset)
+        if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) && (isOnGroundCayoteTime || onWall) && (!isJumping || jumpFromWallBase) && jumpButtonReset)
         {
             yVel = jumpForce;
             isJumping = true;
@@ -221,7 +238,7 @@ public class PlayerMovementScript : MonoBehaviour
             ///-Jump timer is too short (.2secs) so reset isJumping to false
             /// 
             ///-This if below is crutial to reset the velocity of the player when running off edges.
-            if (onGround && !isJumping) yVel = 0;
+            if (isOnGroundCayoteTime && !isJumping) yVel = 0;
 
             if (onWall && !jumpFromWallBase) yVel *= wallYVelocityDecay;
             playerAnimator.ResetTrigger("Jump");
@@ -241,8 +258,9 @@ public class PlayerMovementScript : MonoBehaviour
         //Update Animator to trigger run/idle/other animations.
         playerAnimator.SetFloat("PlayerAbsXVel", Mathf.Abs(xVel));
         playerAnimator.SetFloat("PlayerYVel", yVel);
-        playerAnimator.SetBool("onGround", onGround);
+        playerAnimator.SetBool("onGround", isOnGroundRaw);
         playerAnimator.SetBool("onWall", onWall);
+        playerAnimator.SetBool("onWallRaw", onWallRaw);
         playerAnimator.SetBool("isJumping", isJumping);
 
         //Check for stomp and bounce of the player.
@@ -283,9 +301,9 @@ public class PlayerMovementScript : MonoBehaviour
         }
 
         //Add a running effect if on the ground and running.
-        if (Mathf.Abs(xVel) >= .1 && onGround) runningEffects.Play();
+        if (Mathf.Abs(xVel) >= .1 && isOnGroundCayoteTime) runningEffects.Play();
 
-        if (onGround & isJumping && jumpTimer <= 0)
+        if (isOnGroundCayoteTime & isJumping && jumpTimer <= 0)
         {
             //If just landed
             justLanded();
@@ -316,10 +334,14 @@ public class PlayerMovementScript : MonoBehaviour
         {
             if (groundCols[i].gameObject.tag == "Ground")
             {
+                isOnGroundRaw = true;
+
                 cayoteTimer = cayoteTime;
                 return true;
             }
         }
+
+       isOnGroundRaw = false;
 
         if (cayoteTimer <= 0) return false;
         else return true;
@@ -338,11 +360,11 @@ public class PlayerMovementScript : MonoBehaviour
         Gizmos.DrawCube(new Vector3(playerTransform.position.x, playerTransform.position.y - detectionOffsetY - (detectionHeight / 2), 1), new Vector3(detectionWidth, detectionHeight, 1));
     }
 
-    private bool detectWall()
+    private bool detectWall(float? overrideWallDetectionRange = null)
     {
-        if (pushOffTimer > 0) return false;
+        if (overrideWallDetectionRange == null && pushOffTimer > 0) return false;
 
-        RaycastHit2D hit1 = Physics2D.Raycast(playerTransform.position, Vector2.right, wallDetectionRange, LayerMask.GetMask("Wall"));
+        RaycastHit2D hit1 = Physics2D.Raycast(playerTransform.position, Vector2.right, overrideWallDetectionRange ?? wallDetectionRange, LayerMask.GetMask("Wall"));
         bool detection = false;
         if (hit1.collider != null)
         {
@@ -350,7 +372,7 @@ public class PlayerMovementScript : MonoBehaviour
             wallDir = 1;
         }
 
-        RaycastHit2D hit2 = Physics2D.Raycast(playerTransform.position, Vector2.left, wallDetectionRange, LayerMask.GetMask("Wall"));
+        RaycastHit2D hit2 = Physics2D.Raycast(playerTransform.position, Vector2.left, overrideWallDetectionRange ?? wallDetectionRange, LayerMask.GetMask("Wall"));
         if (hit2.collider != null)
         {
             detection = true;
@@ -376,13 +398,6 @@ public class PlayerMovementScript : MonoBehaviour
 
     public void detectEnemyStomp()
     {
-        //Keep track off some speed boost timers
-        if (bounceSpeedBoostTimer > 0) bounceSpeedBoostTimer -= Time.deltaTime;
-        else
-        {
-            effectedPlayerSpeed = playerSpeed;
-        }
-
         //Get the bounds that for where we will search for enemy colliders
         Vector2 originPoint = (Vector2)playerTransform.position + stompDetectionOffset;
         Vector2 detectionBoxSize = new Vector2(stompDetectionWidth / 2,stompDetectionHeight / 2);
@@ -420,6 +435,11 @@ public class PlayerMovementScript : MonoBehaviour
 
                         //Play the jump particle effect
                         jumpEffect.Play();
+
+                        //Run the enemy bounce trigger
+                        playerAnimator.SetTrigger("EnemyBounce");
+
+                        bounceSpeedBoostEnabled = true;
                     }
                     else
                     {
@@ -468,5 +488,10 @@ public class PlayerMovementScript : MonoBehaviour
         xVel = 0;
         yVel = 0;
         playerRB.velocity = Vector2.zero;
+    }
+
+    public void OnFootstep()
+    {
+        footstepEffect?.Play();
     }
 }
