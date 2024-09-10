@@ -11,7 +11,8 @@ public class PlayerMovementScript : MonoBehaviour
     Animator playerAnimator;
     private Vector3 resetPos;
 
-    [Space] 
+    [Space]
+    [Header("Player movement variables")]
     public float playerSpeed;
     public float effectedPlayerSpeed;
     public float rawXInput;
@@ -30,14 +31,21 @@ public class PlayerMovementScript : MonoBehaviour
     public bool jumpButtonReset = false;
     float jumpInputBuffer = 0;
     public float inputBufferTime = .1f;
+    public AnimationCurve jumpForceFalloff;
+    public float maxJumpHoldTime = 1f;
+    public float initialJumpForce = 10f;
+    // This stores if the player is holding down jump after the initial jump press.
+    // It gets reset as soon as the jump button is released during a jump and cannot be re-enabled
+    // until a new jump is started.
+    public bool continuedJumpButtonPressFromJump = false;
     [Space]
 
-    //Player hitboxes and stomp detection vars
+    [Header("Player hitboxes and stomp detection vars")]
     public BoxCollider2D hitbox;
     public BoxCollider2D stompHitbox;
     LayerMask enemyLayer;
 
-    //Ground detection vars
+    [Header("Ground detection vars")]
     public LayerMask groundMask;
     public float detectionOffsetX;
     public float detectionOffsetY;
@@ -50,7 +58,7 @@ public class PlayerMovementScript : MonoBehaviour
     float cayoteTimer;
     [Space]
 
-    //Wall jump vars.
+    [Header("Wall jump vars")]
     public bool onWall;
     public bool onWallRaw;
     public int wallDir;
@@ -63,19 +71,19 @@ public class PlayerMovementScript : MonoBehaviour
     public float postPushOffDampeningOffset = 0.1f;
     public float wallYVelocityDecay = .8f;
     public bool jumpFromWallBase;
+    float timeOfLastJump = float.PositiveInfinity;
     [Space]
 
-    //Graphics
+    [Header("Graphics")]
     public bool showEffects;
     ParticleSystem landingEffects;
-    ParticleSystem runningEffects;
     ParticleSystem jumpEffect;
     ParticleSystem stompBloodEffect;
     ParticleSystem footstepEffect;
     TrailRenderer speedTrailRenderer;
     [Space]
 
-    //Enemy stomp detection (and stomp slash/jump mechanic)
+    [Header("Enemy stomp detection (and stomp slash/jump mechanic)")]
     public float stompDetectionWidth = 1;
     public float stompDetectionHeight = 1;
     public Vector2 stompDetectionOffset;
@@ -85,9 +93,15 @@ public class PlayerMovementScript : MonoBehaviour
     float bounceSpeedBoostTimer = 0;
     float stompCayoteTimer = 0;
 
-    //Stomp power controls
+    [Header("Stomp power controls")]
     public float stompBounceForce = 5;
     public float stompBounceSpeedBoost = 1;
+
+    [Header("Player Attack Control Variables")]
+    [Tooltip("What the vertical velocity is set to after striking an object vertically")]
+    public float verticalAttackHitRecoil = 5f;
+    [Tooltip("What the horizontal velocity is set to after striking an object horizontally")]
+    public float horizontalAttackHitRecoil = 5f;
 
     public void Start()
     {
@@ -99,8 +113,7 @@ public class PlayerMovementScript : MonoBehaviour
         playerManager = GetComponent<PlayerManager>();
 
         landingEffects = GetComponentsInChildren<ParticleSystem>()[0];
-        runningEffects = GetComponentsInChildren<ParticleSystem>()[1];
-        jumpEffect = GetComponentsInChildren<ParticleSystem>()[2];
+        jumpEffect = GetComponentsInChildren<ParticleSystem>()[1];
         stompBloodEffect = GetComponentsInChildren<ParticleSystem>()[3];
         footstepEffect = GetComponentsInChildren<ParticleSystem>()[4];
         speedTrailRenderer = GetComponentsInChildren<TrailRenderer>()[0];
@@ -119,6 +132,11 @@ public class PlayerMovementScript : MonoBehaviour
         //Update cayote-time timer
         if (cayoteTimer > 0) cayoteTimer -= Time.deltaTime;
         if (stompCayoteTimer > 0) stompCayoteTimer -= Time.deltaTime;
+
+        if (continuedJumpButtonPressFromJump && Time.time - timeOfLastJump < maxJumpHoldTime)
+        {
+            yVel = initialJumpForce * jumpForceFalloff.Evaluate((Time.time - timeOfLastJump) / maxJumpHoldTime);
+        }
     }
 
     public void FixedUpdate()
@@ -164,6 +182,8 @@ public class PlayerMovementScript : MonoBehaviour
         if (!jumpButton)
         {
             jumpButtonReset = true;
+            timeOfLastJump = float.NegativeInfinity;
+            continuedJumpButtonPressFromJump = false;
         }
 
         //Turn on or off the speed boost based on when you touch something
@@ -175,7 +195,11 @@ public class PlayerMovementScript : MonoBehaviour
         //Detect jump condition
         if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) && (isOnGroundCayoteTime || onWall) && (!isJumping || jumpFromWallBase) && jumpButtonReset)
         {
-            yVel = jumpForce;
+            //yVel = jumpForce;
+
+            timeOfLastJump = Time.time;
+            continuedJumpButtonPressFromJump = true;
+
             isJumping = true;
             playerAnimator.SetTrigger("Jump");
             jumpTimer = jumpCooldownTime;
@@ -200,6 +224,8 @@ public class PlayerMovementScript : MonoBehaviour
 
                 //Set the time pushed off
                 timePushedOff = Time.time;
+
+                timeOfLastJump -= maxJumpHoldTime / 5;
             }
             else
             {
@@ -230,7 +256,7 @@ public class PlayerMovementScript : MonoBehaviour
             /// ISSUE
             /// -isJumping does not get reset when you jump already touching a wall
             /// 
-            ///FIX
+            ///FIXED
             ///-Set the if then near the jumpButtonReset() line
             /// to only reset isJumping to false if the player is not on the wall
             ///-Added new condition "jumpFromWallBase" that only is set to true in these scenarios
@@ -301,7 +327,7 @@ public class PlayerMovementScript : MonoBehaviour
         }
 
         //Add a running effect if on the ground and running.
-        if (Mathf.Abs(xVel) >= .1 && isOnGroundCayoteTime) runningEffects.Play();
+        //if (Mathf.Abs(xVel) >= .1 && isOnGroundCayoteTime) runningEffects.Play();
 
         if (isOnGroundCayoteTime & isJumping && jumpTimer <= 0)
         {
@@ -493,5 +519,36 @@ public class PlayerMovementScript : MonoBehaviour
     public void OnFootstep()
     {
         footstepEffect?.Play();
+    }
+
+    public void EnactAttackRecoil(AttackDirection attackDirection)
+    {
+        switch (attackDirection)
+        {
+            case AttackDirection.Up:
+                //Boost player downward if they are not on the ground already
+                if (!isOnGroundRaw) yVel -= verticalAttackHitRecoil;
+                break;
+
+            case AttackDirection.Down:
+                //Stop any down velocity and boost the player upwards
+                yVel = verticalAttackHitRecoil;
+                break;
+
+            case AttackDirection.Regular:
+                //If the orientation is to the right
+                if (playerManager.playerFacingRight)
+                {
+                    //Boost to the left then
+                    xVel = horizontalAttackHitRecoil * -1;
+                }
+                else
+                {
+                    //The player is facing to the left and therefore the boost shoud be to the right
+                    xVel = horizontalAttackHitRecoil;
+                }
+
+                break;
+        }
     }
 }

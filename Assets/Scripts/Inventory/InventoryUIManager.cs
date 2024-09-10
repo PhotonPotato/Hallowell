@@ -54,8 +54,6 @@ public class InventoryUIManager : MonoBehaviour
         //                                              1)));
 
         playerMan.healthBarSlider.gameObject.transform.localPosition = Vector3.Scale(defaultHealthBarPos, new Vector3(1, inventoryPanelOpen ? -1 : 1, 1));
-
-        Debug.Log(playerMan.healthBarSlider.gameObject.transform.position);
     }
 
     public void OpenInventoryPanel()

@@ -228,7 +228,6 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
                 furthestLegFromTarget = i;
             }
         }
-        //print(furthestLegFromTarget);
 
         //Start iterating on the most distant leg
         for (int i = furthestLegFromTarget; i < numLegs + furthestLegFromTarget; i++)
@@ -447,8 +446,7 @@ public class ProceduralQuadropedAnimation : MonoBehaviour
 
         //Cast otherwise its int/int = int
         float legDamagedMultiplier = easeOutQuint((float)currentBoidCountTotal / startingTotalBoids);
-        //Debug.Log("Sample" + (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier));
-        Debug.Log("Available " + availableYPosition);
+
         return (sumOfSampleY / j) + (averageBodyHeight * legDamagedMultiplier) + windUpOffset;
     }
 
