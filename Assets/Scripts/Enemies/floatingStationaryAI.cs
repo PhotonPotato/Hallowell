@@ -21,6 +21,8 @@ public class floatingStationaryAI : MonoBehaviour
     float noiseSampleSeed;
     public float speed;
 
+    public float velocityDampening = .9f;
+
     Rigidbody2D rb;
     
     // Start is called before the first frame update
@@ -37,6 +39,12 @@ public class floatingStationaryAI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        RunBaseAI();
+    }
+
+    // Base movement functionality for stationary ai
+    protected void RunBaseAI()
+    {
         //If theres a transform attached then use it as the origin posisiton.
         if (originTransform != null) originPos = originTransform.position;
 
@@ -44,7 +52,7 @@ public class floatingStationaryAI : MonoBehaviour
         float distToOrgirin = Vector3.Distance(originPos, transform.position);
         if (distToOrgirin > maxDistToOrigin)
         {
-            velocity += (Vector2)(originPos - transform.position).normalized * speed * distToOrgirin * Time.deltaTime * 20;// * .5f;
+            velocity += (Vector2)(originPos - transform.position).normalized * speed * distToOrgirin * Time.deltaTime * 20;
         }
         else
         {
@@ -55,6 +63,13 @@ public class floatingStationaryAI : MonoBehaviour
 
         velocity.x = Mathf.Clamp(velocity.x, maxVelocityX * -1, maxVelocityX);
         velocity.y = Mathf.Clamp(velocity.y, maxVelocityY * -1, maxVelocityY);
+
+        // Check the dot product to find out if the thing is flying away from the desired position
+        if (Vector2.Dot(velocity, (Vector2) (originPos - transform.position)) < 0)
+        {
+            // Dampen the velocity if it is
+            velocity *= .9f;
+        }
 
         rb.velocity = velocity;
     }

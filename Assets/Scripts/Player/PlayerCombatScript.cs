@@ -18,6 +18,7 @@ public class PlayerCombatScript : MonoBehaviour
 
     [Header("Trackers")]
     public bool dealingAttackDamage = false;
+    public bool isAttacking = false;
 
     [NonSerialized] public List<EnemyHealthContainer> healthContainerCache;
 
@@ -99,6 +100,9 @@ public class PlayerCombatScript : MonoBehaviour
                 }
             }
         }
+
+        // Keep track of if the current animation state is attacking
+        isAttacking = !WeaponAnimator.GetCurrentAnimatorStateInfo(0).IsName("WeaponIdle");
     }
 
     public void ResetCombatEnemyCache()

@@ -62,7 +62,7 @@ public class PlayerManager : MonoBehaviour
         }
 
         //If the player is touching anything.
-        Collider2D[] cols = new Collider2D[10];
+        Collider2D[] cols = new Collider2D[19];
         if (rb.GetContacts(cols) != 0)
         {
             //Run through all of the collisions
@@ -149,6 +149,9 @@ public class PlayerManager : MonoBehaviour
         if (invincibilityTimer > 0) return;
 
         EnemyHealthContainer container = obj.GetComponentInChildren<EnemyHealthContainer>();
+
+        if (container == null) return;
+
         float damageAmount = container.damageDealt;
 
         if (container.type == HealthContainerType.ProceduralQuadropedLeg)

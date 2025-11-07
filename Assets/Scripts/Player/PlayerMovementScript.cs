@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PlayerMovementScript : MonoBehaviour
 {
+    [Header("References")]
     public Rigidbody2D playerRB;
     public Transform playerTransform;
     public PlayerManager playerManager;
@@ -38,6 +39,9 @@ public class PlayerMovementScript : MonoBehaviour
     // It gets reset as soon as the jump button is released during a jump and cannot be re-enabled
     // until a new jump is started.
     public bool continuedJumpButtonPressFromJump = false;
+    [Space]
+    [Tooltip("A dampened over-time force that gets applied to the player on update.")]
+    public Vector2 appliedVel;
     [Space]
 
     [Header("Player hitboxes and stomp detection vars")]
@@ -137,6 +141,8 @@ public class PlayerMovementScript : MonoBehaviour
         {
             yVel = initialJumpForce * jumpForceFalloff.Evaluate((Time.time - timeOfLastJump) / maxJumpHoldTime);
         }
+
+        appliedVel *= .98f;
     }
 
     public void FixedUpdate()
@@ -278,10 +284,10 @@ public class PlayerMovementScript : MonoBehaviour
 
             xVel += pushOffForce * exponentialDecayVal * wallDir * -1;
 
-            //Input.ResetInputAxes();
+            // Input.ResetInputAxes();
         }
 
-        //Update Animator to trigger run/idle/other animations.
+        // Update Animator to trigger run/idle/other animations.
         playerAnimator.SetFloat("PlayerAbsXVel", Mathf.Abs(xVel));
         playerAnimator.SetFloat("PlayerYVel", yVel);
         playerAnimator.SetBool("onGround", isOnGroundRaw);
@@ -289,32 +295,37 @@ public class PlayerMovementScript : MonoBehaviour
         playerAnimator.SetBool("onWallRaw", onWallRaw);
         playerAnimator.SetBool("isJumping", isJumping);
 
-        //Check for stomp and bounce of the player.
+        // Check for stomp and bounce of the player.
         detectEnemyStomp();
 
-        playerRB.velocity = new Vector2(xVel, yVel);
+        // Update the rigid body's velocity (include applied velocities)
+        playerRB.velocity = new Vector2(xVel + appliedVel.x, yVel + appliedVel.y);
 
-        if (xVel > 0)
+        // Don't switch direction if attacking
+        if (!playerManager.playerCombat.isAttacking)
         {
-            //Moving right
-            //Face character right.
-            playerRenderer.flipX = false;
-            playerManager.playerFacingRight = true;
-        }
-        else if (xVel < 0)
-        {
-            //Moving left
-            //Face character left.
-            playerRenderer.flipX = true;
-            playerManager.playerFacingRight = false;
-        }
-        else
-        {
-            //No velocity
+            if (xVel > 0)
+            {
+                // Moving right
+                // Face character right.
+                playerRenderer.flipX = false;
+                playerManager.playerFacingRight = true;
+            }
+            else if (xVel < 0)
+            {
+                // Moving left
+                // Face character left.
+                playerRenderer.flipX = true;
+                playerManager.playerFacingRight = false;
+            }
+            else
+            {
+                // No velocity
 
+            }
         }
 
-        //On a wall
+        // On a wall
         if (onWall)
         {
             playerRenderer.flipX = (wallDir > 0);
@@ -326,26 +337,26 @@ public class PlayerMovementScript : MonoBehaviour
             gravityMult = 1;
         }
 
-        //Add a running effect if on the ground and running.
-        //if (Mathf.Abs(xVel) >= .1 && isOnGroundCayoteTime) runningEffects.Play();
+        // Add a running effect if on the ground and running.
+        // if (Mathf.Abs(xVel) >= .1 && isOnGroundCayoteTime) runningEffects.Play();
 
         if (isOnGroundCayoteTime & isJumping && jumpTimer <= 0)
         {
-            //If just landed
+            // If just landed
             justLanded();
 
-            ///Adding the if on wall here fixes the jump bug against the wall that was described above.
+            // Adding the if on wall here fixes the jump bug against the wall that was described above.
             isJumping = false;
         }
         if (jumpTimer <= 0) jumpFromWallBase = false;
 
         if (onWall && jumpFromWallBase) isJumping = false;
 
-        //Run some wall detection for jump resets.
+        // Run some wall detection for jump resets.
         if (detectJumpReset())
         {
-            //This returns true when it goes from not on wall to on wall (once every time you touch a wall).
-            ///This also helps to hix the jump against the wall bug described above
+            // This returns true when it goes from not on wall to on wall (once every time you touch a wall).
+            // This also helps to hix the jump against the wall bug described above
             if (!detectGround()) isJumping = false;
         }
     }
@@ -434,46 +445,46 @@ public class PlayerMovementScript : MonoBehaviour
         /// **NOTE** This will only work if put after the clamping of the player velocity as a speed boost may exeed the clamp.
         /// May want to fix this by adding a temporary boost timer or smthn of the sort in the future, currently too llazy to care.
 
-        //Cleanup start
-        //Detect stomp Hitbox
+        // Cleanup start
+        // Detect stomp Hitbox
         bool stompDetected = false;
         List<Collider2D> stompHitboxCols = new List<Collider2D>();
         if (stompHitbox.GetContacts(stompHitboxCols) != 0)
         {
-            //Look through the colliders within the hitbox for enemies.
+            // Look through the colliders within the hitbox for enemies.
             foreach (Collider2D col in stompHitboxCols)
             {
                 if (col.gameObject.layer == enemyLayer && col.gameObject.tag == "BouncableEnemy")
                 {
-                    //Contact point exists on top of object.
+                    // Contact point exists on top of object.
                     EnemyHealthContainer container = col.gameObject.GetComponent<EnemyHealthContainer>();
                     container.DealDamage(5);
 
-                    //Detect stomp jump
+                    // Detect stomp jump
                     if (Input.GetButton("Jump") && jumpButtonReset)
                     {
-                        //Change the effected speed of the player for a specific time
+                        // Change the effected speed of the player for a specific time
                         effectedPlayerSpeed = playerSpeed + stompBounceSpeedBoost;
                         bounceSpeedBoostTimer = bounceSpeedBoostTime;
 
-                        //Add a jump to the player
+                        // Add a jump to the player
                         yVel = stompBounceForce;
 
-                        //Play the jump particle effect
+                        // Play the jump particle effect
                         jumpEffect.Play();
 
-                        //Run the enemy bounce trigger
+                        // Run the enemy bounce trigger
                         playerAnimator.SetTrigger("EnemyBounce");
 
                         bounceSpeedBoostEnabled = true;
                     }
                     else
                     {
-                        //If not pressed, just give the player a slight upwards jelocity to cushion falls
+                        // If not pressed, just give the player a slight upwards jelocity to cushion falls
                         yVel = 10;
                     }
 
-                    //Add quick blood effect for the stomp
+                    // Add quick blood effect for the stomp
                     stompBloodEffect.Play();
 
                     stompDetected = true;
@@ -483,22 +494,22 @@ public class PlayerMovementScript : MonoBehaviour
 
         if (!stompDetected)
         {
-            //Detect player hitbox before the stomp hitbox.
+            // Detect player hitbox before the stomp hitbox.
             List<Collider2D> playerHitboxCols = new List<Collider2D>();
 
-            //Use a mask that filters for enemies
+            // Use a mask that filters for enemies
             ContactFilter2D playerHitboxFilter = new ContactFilter2D();
             playerHitboxFilter.useTriggers = true;
             playerHitboxFilter.useLayerMask = true;
-            //Bitshift the mask
+            // Bitshift the mask
             playerHitboxFilter.layerMask = 1 << LayerMask.NameToLayer("Enemy"); ;
 
             if (hitbox.GetContacts(playerHitboxFilter, playerHitboxCols) != 0)
             {
-                //Look through the colliders within the hitbox for enemies.
+                // Look through the colliders within the hitbox for enemies.
                 foreach (Collider2D col in playerHitboxCols)
                 {
-                    //Reference the player manager to deal damage.
+                    // Reference the player manager to deal damage.
                     playerManager.DealDamage(col.gameObject);
                 }
             }
@@ -507,10 +518,10 @@ public class PlayerMovementScript : MonoBehaviour
 
     public void resetPlayerInLevel()
     {
-        //Reset Position
+        // Reset Position
         transform.position = resetPos;
 
-        //Reset Velocity
+        // Reset Velocity
         xVel = 0;
         yVel = 0;
         playerRB.velocity = Vector2.zero;
@@ -526,25 +537,25 @@ public class PlayerMovementScript : MonoBehaviour
         switch (attackDirection)
         {
             case AttackDirection.Up:
-                //Boost player downward if they are not on the ground already
+                // Boost player downward if they are not on the ground already
                 if (!isOnGroundRaw) yVel -= verticalAttackHitRecoil;
                 break;
 
             case AttackDirection.Down:
-                //Stop any down velocity and boost the player upwards
+                // Stop any down velocity and boost the player upwards
                 yVel = verticalAttackHitRecoil;
                 break;
 
             case AttackDirection.Regular:
-                //If the orientation is to the right
+                // If the orientation is to the right
                 if (playerManager.playerFacingRight)
                 {
-                    //Boost to the left then
+                    // Boost to the left then
                     xVel = horizontalAttackHitRecoil * -1;
                 }
                 else
                 {
-                    //The player is facing to the left and therefore the boost shoud be to the right
+                    // The player is facing to the left and therefore the boost shoud be to the right
                     xVel = horizontalAttackHitRecoil;
                 }
 
