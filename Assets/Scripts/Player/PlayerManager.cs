@@ -4,6 +4,11 @@ using System;
 
 public class PlayerManager : MonoBehaviour
 {
+    public static PlayerManager Instance;
+
+    [Header("Temp refs")]
+    public Transform RespawnPoint;
+
     //Script attached to player character
     public PlayerMovementScript playerMovement;
     public PlayerCombatScript playerCombat;
@@ -14,6 +19,10 @@ public class PlayerManager : MonoBehaviour
 
     public float invincibilityTimer = 0;
     public float invincibilityTime;
+
+    public bool cloaked = false;
+    public float cloakingTime = 3;
+    float timeOfCloaking = float.NegativeInfinity;
 
     [NonSerialized]
     public HealthContainer playerHealth;
@@ -35,6 +44,13 @@ public class PlayerManager : MonoBehaviour
 
     [NonSerialized] public bool playerFacingRight;
     public GameObject weaponPositionParent;
+
+    private void Awake()
+    {
+        // Singleton boilerplate
+        if (Instance == null) Instance = this;
+        else Destroy(this);
+    }
 
     void Start()
     {
@@ -60,6 +76,14 @@ public class PlayerManager : MonoBehaviour
         {
             playerMovement.resetPlayerInLevel();
         }
+
+        // Cloaking
+        if (Input.GetKey("v"))
+        {
+            cloaked = true;
+            timeOfCloaking = Time.time;
+        }
+        if (cloaked && Time.time - timeOfCloaking > cloakingTime) cloaked = false;
 
         //If the player is touching anything.
         Collider2D[] cols = new Collider2D[19];
@@ -154,6 +178,7 @@ public class PlayerManager : MonoBehaviour
 
         float damageAmount = container.damageDealt;
 
+        // TODO: this shit is disgusting asf
         if (container.type == HealthContainerType.ProceduralQuadropedLeg)
         {
             if ((container as proceduralQuadropedHealthContainer).performingLightAttack)
@@ -177,6 +202,18 @@ public class PlayerManager : MonoBehaviour
 
         //Add iFrames and timer
         invincibilityTimer = invincibilityTime;
+    }
+
+    /// <summary>
+    /// Deals damager to the player and resets the players position to the last safe spot
+    /// </summary>
+    public void DealDamageWithReset(float damageAmount, bool forceDamage = false)
+    {
+        DealDamage(damageAmount, forceDamage);
+
+        transform.position = RespawnPoint.position;
+        playerMovement.xVel = 0;
+        playerMovement.yVel = 0;
     }
 
     public void CheckForInteraction()

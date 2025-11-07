@@ -167,7 +167,7 @@ public class PlayerMovementScript : MonoBehaviour
 
         if (Mathf.Abs(smoothedXInput) > xInputMin)
         {
-            xVel = smoothedXInput * effectedPlayerSpeed;
+            xVel = smoothedXInput * effectedPlayerSpeed * (playerManager.cloaked ? .3f : 1f);
         }
         else
         {
