@@ -17,7 +17,6 @@ public class PlayerMovementScript : MonoBehaviour
     public float playerSpeed;
     public float effectedPlayerSpeed;
     public float rawXInput;
-    public float smoothedXInput;
     public float yInput;
     public float xInputMin;
     public float xVel;
@@ -68,11 +67,10 @@ public class PlayerMovementScript : MonoBehaviour
     public int wallDir;
     public float gravityMultOnWall;
     public float wallDetectionRange;
-    public float pushOffForce;
-    public float pushOffTimer;
+    public float pushOffOverrideInput;
     public float pushOffDuration;
+    public bool pushOffDirection;
     float timePushedOff;
-    public float postPushOffDampeningOffset = 0.1f;
     public float wallYVelocityDecay = .8f;
     public bool jumpFromWallBase;
     float timeOfLastJump = float.PositiveInfinity;
@@ -131,7 +129,6 @@ public class PlayerMovementScript : MonoBehaviour
     {
         //Timers.
         if (!(isOnGroundCayoteTime & isJumping && jumpTimer <= 0)) jumpTimer -= Time.deltaTime;
-        if (pushOffTimer > 0) pushOffTimer -= Time.deltaTime;
 
         //Update cayote-time timer
         if (cayoteTimer > 0) cayoteTimer -= Time.deltaTime;
@@ -147,7 +144,7 @@ public class PlayerMovementScript : MonoBehaviour
 
     public void FixedUpdate()
     {
-        smoothedXInput = Input.GetAxis("Horizontal");
+        rawXInput = Input.GetAxis("Horizontal");
         yInput = Input.GetAxisRaw("Vertical");
 
         //Run some good ol ground detection.
@@ -160,14 +157,20 @@ public class PlayerMovementScript : MonoBehaviour
         else effectedPlayerSpeed = playerSpeed;
 
         //Slowly bring back input if there is a wall jump in action (with a slight time offset to start the dampeneing midway into the pushoff)
-        if (Time.time - timePushedOff < 1)
+        float timeSincePushOff = Time.time - timePushedOff;
+        if (timeSincePushOff < 1)
         {
-            smoothedXInput *= 1 - Mathf.Pow(.345f, (Time.time - timePushedOff) * 9.4f);
+            float pushOffInputOverrideAmt = Mathf.Pow(.03f, timeSincePushOff);
+
+            // The new input is a combination of the player input and a forced input from the pushoff
+            rawXInput = (rawXInput * (1 - pushOffInputOverrideAmt)) + (pushOffOverrideInput * wallDir * -1 * pushOffInputOverrideAmt);
+
+            Debug.Log($"Raw input: {(rawXInput * (1 - pushOffInputOverrideAmt))}\n Push off: {(pushOffOverrideInput * wallDir * -1 * pushOffInputOverrideAmt)}\n Push amt: {pushOffInputOverrideAmt}");
         }
 
-        if (Mathf.Abs(smoothedXInput) > xInputMin)
+        if (Mathf.Abs(rawXInput) > xInputMin)
         {
-            xVel = smoothedXInput * effectedPlayerSpeed * (playerManager.cloaked ? .3f : 1f);
+            xVel = rawXInput * effectedPlayerSpeed * (playerManager.cloaked ? .3f : 1f);
         }
         else
         {
@@ -199,7 +202,10 @@ public class PlayerMovementScript : MonoBehaviour
         if (jumpButton && (jumpButtonReset || (Time.time - jumpInputBuffer < 0.05 && Time.time - jumpInputBuffer != Mathf.NegativeInfinity))) jumpInputBuffer = Time.time;
 
         //Detect jump condition
-        if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) && (isOnGroundCayoteTime || onWall) && (!isJumping || jumpFromWallBase) && jumpButtonReset)
+        if ((jumpButton || Time.time - jumpInputBuffer < inputBufferTime) &&
+            (isOnGroundCayoteTime || onWall) &&
+            (!isJumping || jumpFromWallBase) &&
+            jumpButtonReset)
         {
             //yVel = jumpForce;
 
@@ -221,11 +227,8 @@ public class PlayerMovementScript : MonoBehaviour
 
             if (onWall)
             {
-                //Add a value to push off wall.
-                xVel = pushOffDuration * wallDir;
+                // TODO: clean this bullshit
 
-                //Start push off timer.
-                pushOffTimer = pushOffDuration;
                 playerAnimator.SetTrigger("Jump");
 
                 //Set the time pushed off
@@ -276,16 +279,6 @@ public class PlayerMovementScript : MonoBehaviour
             playerAnimator.ResetTrigger("Jump");
         }
 
-        //Update jump timers.
-        if (pushOffTimer > 0)
-        {
-            //Calculate the exponential decay based on time since push off
-            float exponentialDecayVal = Mathf.Pow(.345f, (Time.time - timePushedOff) * 9.4f);
-
-            xVel += pushOffForce * exponentialDecayVal * wallDir * -1;
-
-            // Input.ResetInputAxes();
-        }
 
         // Update Animator to trigger run/idle/other animations.
         playerAnimator.SetFloat("PlayerAbsXVel", Mathf.Abs(xVel));
@@ -328,7 +321,7 @@ public class PlayerMovementScript : MonoBehaviour
         // On a wall
         if (onWall)
         {
-            playerRenderer.flipX = (wallDir > 0);
+            playerRenderer.flipX = wallDir > 0;
             if (!isJumping) gravityMult = gravityMultOnWall;
             else gravityMult = 1;
         }
@@ -399,7 +392,7 @@ public class PlayerMovementScript : MonoBehaviour
 
     private bool detectWall(float? overrideWallDetectionRange = null)
     {
-        if (overrideWallDetectionRange == null && pushOffTimer > 0) return false;
+        if (overrideWallDetectionRange == null && Time.time - timePushedOff < pushOffDuration) return false;
 
         RaycastHit2D hit1 = Physics2D.Raycast(playerTransform.position, Vector2.right, overrideWallDetectionRange ?? wallDetectionRange, LayerMask.GetMask("Wall"));
         bool detection = false;

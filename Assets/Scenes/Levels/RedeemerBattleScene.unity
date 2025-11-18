@@ -5874,11 +5874,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a198783492fa9fc448cdc868bdd0d1a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RespawnPoint: {fileID: 0}
   playerMovement: {fileID: 116058913}
   playerCombat: {fileID: 1549877904}
   playerCameraController: {fileID: 116058912}
   invincibilityTimer: 0
   invincibilityTime: 1
+  cloaked: 0
+  cloakingTime: 3
   invincibilityAura: {fileID: 1039675241}
   auraPulseFrequency: 8
   healthBarSlider: {fileID: 194261929}
@@ -52356,12 +52359,12 @@ MonoBehaviour:
   lowStabHoldTime: 5
   lowStabHoldTimer: 0
   maxHealthLossDuringVulnerabilities: 80
-  attacksBetweenVulnerabilities: 20
+  attacksBetweenVulnerabilities: 2
   attacksSinceLastVulnerability: 0
   godRayLayers:
     serializedVersion: 2
     m_Bits: 2176
-  numGodRays: 10
+  numGodRays: 5
   godRaySpwanRadius: 40
   godRayMinPredictionStrenght: 0.5
   godRayMaxPredictionStrenght: 11
