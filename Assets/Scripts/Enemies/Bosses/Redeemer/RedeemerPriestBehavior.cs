@@ -348,8 +348,8 @@ public class RedeemerPriestBehavior : MonoBehaviour
                 ray.renderer.colorGradient = GodRayWindingUpGradient;
 
                 // Make an array to store the collider points
-                Vector2[] colliderEdgePoints = new Vector2[2];
-                colliderEdgePoints[0] = Vector2.zero;
+                Vector2[] colliderEndPoints = new Vector2[2];
+                colliderEndPoints[0] = Vector2.zero;
 
                 // Update vertices
                 // Position zero should be the ray origin
@@ -374,14 +374,14 @@ public class RedeemerPriestBehavior : MonoBehaviour
 
                 Vector3 raycastHitPos = raycastHit.point;
                 ray.renderer.SetPosition(1, raycastHitPos - ray.renderer.transform.position);
-                colliderEdgePoints[1] = raycastHitPos - ray.renderer.transform.position;
+                colliderEndPoints[1] = raycastHitPos - ray.renderer.transform.position;
 
                 ray.particlesParent.position = raycastHitPos;
 
                 // Add randomness to the time by subtracting from the initiation timestamp randomly
                 ray.initiationTimeStamp -= Random.Range(-5, 10f) * Time.deltaTime;
 
-                CurrentGodRays[i].edgeCollider.points = colliderEdgePoints;
+                CurrentGodRays[i].edgeCollider.points = colliderEndPoints;
 
                 Debug.Log("ray " + i + " timestamp: " + ray.initiationTimeStamp);
             }

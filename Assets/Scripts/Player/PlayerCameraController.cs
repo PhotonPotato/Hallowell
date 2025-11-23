@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerCameraController : MonoBehaviour
 {
-    public Transform mainCam;
+    public Transform MainCamParentTransform;
     public Transform playerPos;
 
     public PlayerMovementScript movementScript;
@@ -26,7 +26,7 @@ public class PlayerCameraController : MonoBehaviour
 
     public void FixedUpdate()
     {
-        Vector2 camPos = new Vector3(mainCam.position.x, mainCam.position.y);
+        Vector2 camPos = new Vector3(MainCamParentTransform.position.x, MainCamParentTransform.position.y);
         Vector2 pPos = new Vector2(playerPos.position.x, playerPos.position.y);
 
         playerVel.x = movementScript.xVel;
@@ -43,11 +43,11 @@ public class PlayerCameraController : MonoBehaviour
 
         camPos += (desiredPos - camPos) / currentCamSpeed;
 
-        float cameraZ = mainCam.transform.position.z;
+        float cameraZ = MainCamParentTransform.transform.position.z;
 
-        cameraZ += (camConstraints.zPos - mainCam.position.z) / camConstraints.zoomSpeed;
+        cameraZ += (camConstraints.zPos - MainCamParentTransform.position.z) / camConstraints.zoomSpeed;
 
-        mainCam.position = new Vector3(camPos.x, camPos.y, cameraZ);
+        MainCamParentTransform.position = new Vector3(camPos.x, camPos.y, cameraZ);
 
         //Set the zoom
         //Camera.main.orthographicSize += (camConstraints.zoom - Camera.main.orthographicSize) / camConstraints.zoomSpeed;

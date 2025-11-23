@@ -12,6 +12,9 @@ public class PlayerMovementScript : MonoBehaviour
     Animator playerAnimator;
     private Vector3 resetPos;
 
+    [Tooltip("Used when the player needs to be controlled externally. (Like being grabbed or grappling)")]
+    public bool disableDefaultPlayerMovement = false;
+
     [Space]
     [Header("Player movement variables")]
     public float playerSpeed;
@@ -144,6 +147,8 @@ public class PlayerMovementScript : MonoBehaviour
 
     public void FixedUpdate()
     {
+        if (disableDefaultPlayerMovement) return;
+
         rawXInput = Input.GetAxis("Horizontal");
         yInput = Input.GetAxisRaw("Vertical");
 
@@ -164,8 +169,6 @@ public class PlayerMovementScript : MonoBehaviour
 
             // The new input is a combination of the player input and a forced input from the pushoff
             rawXInput = (rawXInput * (1 - pushOffInputOverrideAmt)) + (pushOffOverrideInput * wallDir * -1 * pushOffInputOverrideAmt);
-
-            Debug.Log($"Raw input: {(rawXInput * (1 - pushOffInputOverrideAmt))}\n Push off: {(pushOffOverrideInput * wallDir * -1 * pushOffInputOverrideAmt)}\n Push amt: {pushOffInputOverrideAmt}");
         }
 
         if (Mathf.Abs(rawXInput) > xInputMin)
@@ -470,6 +473,8 @@ public class PlayerMovementScript : MonoBehaviour
                         playerAnimator.SetTrigger("EnemyBounce");
 
                         bounceSpeedBoostEnabled = true;
+
+                        ScreenShakeManager.Instance?.InitiateDefaultSinShake();
                     }
                     else
                     {
