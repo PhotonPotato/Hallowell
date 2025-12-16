@@ -9,15 +9,17 @@ public class ScreenShakeManager : MonoBehaviour
     [Header("Settings")]
     public float zToIntesityMultiplier = -1f;
 
+    [Space]
+
     public float defaultPerlinShakeDuration = .2f;
-    public float defaultPerlinShakeIntensity = 2f;
+    public float defaultPerlinShakeIntensity = .4f;
     public float defaultPerlinShakeFrequency = .3f;
 
     [Space]
 
-    public float defaultSinShakeDuration = .2f;
-    public float defaultSinShakeIntensity = 2f;
-    public float defaultSinShakeFrequency = .03f;
+    public float defaultSinShakeDuration = .05f;
+    public float defaultSinShakeIntensity = .15f;
+    public float defaultSinShakeFrequency = 40f;
 
     public IEnumerator currentShake;
 
@@ -35,8 +37,14 @@ public class ScreenShakeManager : MonoBehaviour
         if (Input.GetKeyDown("l")) InitiateDefaultSinShake();
     }
 
+    /// <summary>
+    /// Runs perlin shake with default values
+    /// </summary>
     public void InitiateDefaultPerlinShake() => InitiatePerlinShake(defaultPerlinShakeDuration, defaultPerlinShakeIntensity, defaultPerlinShakeFrequency);
 
+    /// <summary>
+    /// Fire and forget method for running a perlin noise shake
+    /// </summary>
     public void InitiatePerlinShake(float duration, float intensity, float sampleFrequency, float? seedX = null, float? seedY = null)
     {
         if (currentShake != null) StopCoroutine(currentShake);
@@ -46,6 +54,16 @@ public class ScreenShakeManager : MonoBehaviour
         StartCoroutine(currentShake);
     }
 
+    /// <summary>
+    /// Coroutine for screen shake using perlin noise. Use for more disorienting shake.
+    /// </summary>
+    /// <param name="duration"></param>
+    /// <param name="intensity"></param>
+    /// <param name="sampleFrequency"></param>
+    /// <param name="startTimestamp"></param>
+    /// <param name="seedX"></param>
+    /// <param name="seedY"></param>
+    /// <returns></returns>
     private IEnumerator PerlinShake(float duration, float intensity, float sampleFrequency, float startTimestamp, float? seedX = null, float? seedY = null)
     {
         float elapsedTime = 0;
@@ -67,9 +85,14 @@ public class ScreenShakeManager : MonoBehaviour
         transform.localPosition = Vector3.zero;
     }
 
-
+    /// <summary>
+    /// Runs a sin shake with the default settings.
+    /// </summary>
     public void InitiateDefaultSinShake() => InitiateSinShake(defaultSinShakeDuration, defaultSinShakeIntensity, defaultSinShakeFrequency);
 
+    /// <summary>
+    /// Fire and forget function for starting a sin shake coroutine.
+    /// </summary>
     public void InitiateSinShake(float duration, float intensity, float frequency)
     {
         if (currentShake != null) StopCoroutine(currentShake);
@@ -79,6 +102,9 @@ public class ScreenShakeManager : MonoBehaviour
         StartCoroutine(currentShake);
     }
 
+    /// <summary>
+    /// Coroutine for screen shake using layered sin waves.
+    /// </summary>
     private IEnumerator SinShake(float duration, float intensity, float frequency, float octaves = 2)
     {
         float elapsedTime = 0;
@@ -107,7 +133,5 @@ public class ScreenShakeManager : MonoBehaviour
 
         currentShake = null;
         transform.localPosition = Vector3.zero;
-
-        Debug.Log("Sin shake has concluded");
     }
 }

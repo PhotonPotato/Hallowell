@@ -24,6 +24,8 @@ public class PlayerGrappleBehavior : MonoBehaviour
     [SerializeField] private Vector3 grappleStartPoint;
     [SerializeField] private Vector3 grappleEndPoint;
     [SerializeField] private float timeOfLastGrapple = float.NegativeInfinity;
+    private bool grapplingEnemy;
+    private RaycastHit2D lastHit;
 
     private void Awake()
     {
@@ -53,6 +55,11 @@ public class PlayerGrappleBehavior : MonoBehaviour
 
                 grappleStartPoint = transform.position;
                 grappleEndPoint = hit.point;
+
+                // Set this lil flag fo shits 
+                grapplingEnemy = hit.collider.gameObject.layer == LayerMask.NameToLayer("Enemy");
+
+                lastHit = hit;
             }
 
             // Check if its an enemy or not
@@ -69,6 +76,21 @@ public class PlayerGrappleBehavior : MonoBehaviour
             {
                 isGrappling = false;
                 manager.playerMovement.disableDefaultPlayerMovement = false;
+
+                if (grapplingEnemy)
+                {
+                    // Deal damage
+                    EnemyHealthContainer container = lastHit.collider.GetComponent<EnemyHealthContainer>();
+                    container.DealDamage(5);
+
+                    // Player bounce
+                    manager.playerMovement.ApplyStompYForce();
+
+                    ScreenShakeManager.Instance?.InitiateDefaultSinShake();
+                }
+                else
+                    // Make the shake proportional to the distance of the grapple
+                    ScreenShakeManager.Instance?.InitiateSinShake(.08f * lastHit.distance / 18, .3f, 40);
             }
             else
                 transform.position = Vector3.Lerp(grappleStartPoint, grappleEndPoint, easeInOutQuint(t / timeToGrapple));

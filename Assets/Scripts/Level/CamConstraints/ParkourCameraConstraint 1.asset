@@ -15,7 +15,7 @@ MonoBehaviour:
   xMin: 0
   xMax: 497
   yMin: 0
-  yMax: 97
+  yMax: 8
   useSpeedSmoothing: 1
   zoom: 21.25774
   zPos: -15.2

@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class EnemyHealthContainer : HealthContainer
 {
@@ -10,24 +12,27 @@ public class EnemyHealthContainer : HealthContainer
     public bool destroyOnNoHealth = false;
 
     public bool respawnWithTime = false;
-    [System.NonSerialized] public bool inactive = false;
+    [NonSerialized] public bool inactive = false;
     public float respawnTime = 10;
-    [System.NonSerialized] public float respawnTimer = 0;
+    [NonSerialized] public float respawnTimer = 0;
 
     //Health bar slider vars
     public bool showHealthBarOnDealDamage = false;
-    [System.NonSerialized] public bool healthBarCreated = false;
+    [NonSerialized] public bool healthBarCreated = false;
     public GameObject canvasWithHealthBar;
-    [System.NonSerialized] public GameObject barObj;
+    [NonSerialized] public GameObject barObj;
 
     public Vector3 healthBarScale = new Vector3(0.05f, 0.05f, 0.05f);
 
     public float damageDealt;
 
     //CLEAN THIS PLEASE
+    [Header("Extra Settings")]
     public bool DamageCallbackToParent = false;
 
     public bool SetDamageTriggerInAnimator = false;
+
+    public bool SendDamageCallbackToThisObject = false;
 
     private void Update()
     {
@@ -51,7 +56,7 @@ public class EnemyHealthContainer : HealthContainer
     }
 
     //A public mehtod to deal damage
-    public override void DealDamage(float damage)
+    public override void DealDamage(float damage, AttackDirection direction, Vector2 inheritedVelocity = default)
     {
         currentHealth -= damage;
 
@@ -99,5 +104,20 @@ public class EnemyHealthContainer : HealthContainer
                 barObj.SetActive(true);
             }
         }
+
+        // Call any functions on this object that can handle the directional damage
+        if (SendDamageCallbackToThisObject) SendMessage("OnDamageReceived", new EnemyDamageInfo()
+                                                                                {
+                                                                                    amount = damage,
+                                                                                    direction = direction,
+                                                                                    inheritedVelocity = inheritedVelocity
+                                                                                });
     }
+}
+
+public struct EnemyDamageInfo
+{
+    public float amount;
+    public AttackDirection direction;
+    public Vector2 inheritedVelocity;
 }

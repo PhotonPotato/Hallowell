@@ -20,6 +20,9 @@ public class PlayerCombatScript : MonoBehaviour
     public bool dealingAttackDamage = false;
     public bool isAttacking = false;
 
+    [Header("Effects")]
+    public TrailRenderer swordSwingTipTrail;
+
     [NonSerialized] public List<EnemyHealthContainer> healthContainerCache;
 
     private AttackDirection lastAttackDirection;
@@ -29,6 +32,8 @@ public class PlayerCombatScript : MonoBehaviour
         PlayerManager = FindObjectOfType<PlayerManager>();
 
         healthContainerCache = new List<EnemyHealthContainer>();
+
+        swordSwingTipTrail.emitting = false;
     }
 
     private void Update()
@@ -66,7 +71,11 @@ public class PlayerCombatScript : MonoBehaviour
                 {
                     //Then it must be a horizontal slash
                     WeaponAnimator.SetTrigger("AttackHorizontal");
-                    lastAttackDirection = AttackDirection.Regular;
+
+                    if (PlayerManager.playerFacingRight)
+                        lastAttackDirection = AttackDirection.Right;
+                    else
+                        lastAttackDirection = AttackDirection.Left;
 
                     //Player regular slash
                 }
@@ -82,21 +91,23 @@ public class PlayerCombatScript : MonoBehaviour
             //Check for valid colliders and their objects
             foreach (Collider2D col in cols)
             {
-                EnemyHealthContainer enemyHealthContainer;
 
-                if (col.gameObject.TryGetComponent<EnemyHealthContainer>(out enemyHealthContainer))
+                if (col.gameObject.TryGetComponent<EnemyHealthContainer>(out EnemyHealthContainer enemyHealthContainer))
                 {
                     //Make sure this collider hasn't been damaged before
                     if (healthContainerCache.Contains(enemyHealthContainer)) return;
 
                     //Change this later btw MAKE THE DAMAGE AMT MORE NUANCED
-                    enemyHealthContainer.DealDamage(weaponAttackDamage);
+                    enemyHealthContainer.DealDamage(weaponAttackDamage, lastAttackDirection, PlayerManager.playerMovement.playerRB.velocity);
 
                     //Save it in the cache for later
                     healthContainerCache.Add(enemyHealthContainer);
 
                     //Lastly send the slash feedback to the player movement to add player recoil
                     PlayerManager.playerMovement.EnactAttackRecoil(lastAttackDirection);
+
+                    HitStopManager.Instance?.InitDefaultEasedHitStop();
+                    ScreenShakeManager.Instance?.InitiateDefaultSinShake();
                 }
             }
         }
@@ -118,6 +129,9 @@ public class PlayerCombatScript : MonoBehaviour
     public void OnTurnOnAttackDamage()
     {
         dealingAttackDamage = true;
+
+        // Call the start of attack effects
+        swordSwingTipTrail.emitting = true;
     }
 
     /// <summary>
@@ -135,6 +149,9 @@ public class PlayerCombatScript : MonoBehaviour
         WeaponAnimator.ResetTrigger("AttackUp");
         WeaponAnimator.ResetTrigger("AttackDown");
         WeaponAnimator.ResetTrigger("AttackHorizontal");
+
+        // Turn off the attack effects
+        swordSwingTipTrail.emitting = false;
     }
 
     public void OnDrawGizmosSelected()

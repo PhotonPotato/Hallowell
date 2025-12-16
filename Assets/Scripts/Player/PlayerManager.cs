@@ -190,6 +190,9 @@ public class PlayerManager : MonoBehaviour
 
         playerHealth.DealDamage(damageAmount);
 
+        HitStopManager.Instance?.InitHitStop(.2f, 0);
+        Time.timeScale = 0;
+
         //Add iFrames and timer
         invincibilityTimer = invincibilityTime;
     }
@@ -202,6 +205,8 @@ public class PlayerManager : MonoBehaviour
 
         //Add iFrames and timer
         invincibilityTimer = invincibilityTime;
+
+        HitStopManager.Instance?.InitHitStop(.2f, 0);
     }
 
     /// <summary>

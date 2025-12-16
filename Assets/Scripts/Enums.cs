@@ -23,6 +23,8 @@ public enum AttackType
 public enum AttackDirection
 {
     Regular,
+    Right,
+    Left,
     Up,
     Down
 }
@@ -39,4 +41,11 @@ public enum HealthContainerType
     Player,
     Enemy,
     ProceduralQuadropedLeg
+}
+
+public enum EnemyTag
+{
+    Light,
+    Staggerable,
+    Etc
 }

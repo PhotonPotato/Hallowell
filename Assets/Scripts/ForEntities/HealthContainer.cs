@@ -17,6 +17,16 @@ public class HealthContainer : MonoBehaviour
         currentHealth -= damage;
     }
 
+    public virtual void DealDamage(float damage, AttackDirection direction)
+    {
+        currentHealth -= damage;
+    }
+
+    public virtual void DealDamage(float damage, AttackDirection direction, Vector2 InheritedVelocity = default)
+    {
+        currentHealth -= damage;
+    }
+
     public virtual float GetHealth()
     {
         return currentHealth;

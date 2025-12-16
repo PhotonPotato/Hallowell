@@ -464,6 +464,7 @@ public class PlayerMovementScript : MonoBehaviour
                         bounceSpeedBoostTimer = bounceSpeedBoostTime;
 
                         // Add a jump to the player
+                        // TODO: too fried to know whether to replace this with da funct rn figure out later
                         yVel = stompBounceForce;
 
                         // Play the jump particle effect
@@ -474,12 +475,13 @@ public class PlayerMovementScript : MonoBehaviour
 
                         bounceSpeedBoostEnabled = true;
 
+                        // TODO: tune this fakah
                         ScreenShakeManager.Instance?.InitiateDefaultSinShake();
                     }
                     else
                     {
                         // If not pressed, just give the player a slight upwards jelocity to cushion falls
-                        yVel = 10;
+                        if (yVel < 10) yVel = 10;
                     }
 
                     // Add quick blood effect for the stomp
@@ -544,20 +546,18 @@ public class PlayerMovementScript : MonoBehaviour
                 yVel = verticalAttackHitRecoil;
                 break;
 
-            case AttackDirection.Regular:
-                // If the orientation is to the right
-                if (playerManager.playerFacingRight)
-                {
-                    // Boost to the left then
-                    xVel = horizontalAttackHitRecoil * -1;
-                }
-                else
-                {
-                    // The player is facing to the left and therefore the boost shoud be to the right
-                    xVel = horizontalAttackHitRecoil;
-                }
+            case AttackDirection.Right:
+                // Boost to the left then
+                xVel = horizontalAttackHitRecoil * -1;
+                break;
+
+            case AttackDirection.Left:
+                // The player is facing to the left and therefore the boost shoud be to the right
+                xVel = horizontalAttackHitRecoil;
 
                 break;
         }
     }
+
+    public void ApplyStompYForce() => yVel = stompBounceForce;
 }
