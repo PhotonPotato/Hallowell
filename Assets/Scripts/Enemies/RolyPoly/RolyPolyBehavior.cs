@@ -2,9 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RolyPolyBehavior : EnemyBehaviorComponent
+public class RolyPolyBehavior : EnemyBehaviorComponent, IStaggerable
 {
     Rigidbody2D rb;
+
+    //[Header("Trackers")]
+    [SerializeField] public bool IsStaggered { get; set; }
 
     [Header("Enemy Specific Settings")]
     public float whackXForce = 3f;
@@ -24,15 +27,19 @@ public class RolyPolyBehavior : EnemyBehaviorComponent
         switch (info.direction)
         {
             case AttackDirection.Right:
-                whackedVelocity = Vector2.right * whackXForce;
+                if (IsStaggered)
+                    whackedVelocity = Vector2.right * whackXForce;
                 break;
 
             case AttackDirection.Left:
-                whackedVelocity = Vector2.left * whackXForce;
+                if (IsStaggered)
+                    whackedVelocity = Vector2.left * whackXForce;
                 break;
 
             case AttackDirection.Up:
                 whackedVelocity = Vector2.up * whackYForce;
+
+                IsStaggered = true;
                 break;
         }
 

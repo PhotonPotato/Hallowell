@@ -19,7 +19,7 @@ public class PlayerMovementScript : MonoBehaviour
     [Header("Player movement variables")]
     public float playerSpeed;
     public float effectedPlayerSpeed;
-    public float rawXInput;
+    public float rawXInput, xInput;
     public float yInput;
     public float xInputMin;
     public float xVel;
@@ -149,7 +149,11 @@ public class PlayerMovementScript : MonoBehaviour
     {
         if (disableDefaultPlayerMovement) return;
 
-        rawXInput = Input.GetAxis("Horizontal");
+        rawXInput = Input.GetAxisRaw("Horizontal");
+
+        // Constantly move the felt xInput towards the raw
+        xInput += (rawXInput - xInput) / 5;
+
         yInput = Input.GetAxisRaw("Vertical");
 
         //Run some good ol ground detection.
@@ -168,12 +172,12 @@ public class PlayerMovementScript : MonoBehaviour
             float pushOffInputOverrideAmt = Mathf.Pow(.03f, timeSincePushOff);
 
             // The new input is a combination of the player input and a forced input from the pushoff
-            rawXInput = (rawXInput * (1 - pushOffInputOverrideAmt)) + (pushOffOverrideInput * wallDir * -1 * pushOffInputOverrideAmt);
+            xInput = (xInput * (1 - pushOffInputOverrideAmt)) + (pushOffOverrideInput * wallDir * -1 * pushOffInputOverrideAmt);
         }
 
-        if (Mathf.Abs(rawXInput) > xInputMin)
+        if (Mathf.Abs(xInput) > xInputMin)
         {
-            xVel = rawXInput * effectedPlayerSpeed * (playerManager.cloaked ? .3f : 1f);
+            xVel = xInput * effectedPlayerSpeed * (playerManager.cloaked ? .3f : 1f);
         }
         else
         {
