@@ -169,7 +169,7 @@ public class PlayerMovementScript : MonoBehaviour
         float timeSincePushOff = Time.time - timePushedOff;
         if (timeSincePushOff < 1)
         {
-            float pushOffInputOverrideAmt = Mathf.Pow(.03f, timeSincePushOff);
+            float pushOffInputOverrideAmt = Mathf.Pow(.03f, timeSincePushOff * 2.5f);
 
             // The new input is a combination of the player input and a forced input from the pushoff
             xInput = (xInput * (1 - pushOffInputOverrideAmt)) + (pushOffOverrideInput * wallDir * -1 * pushOffInputOverrideAmt);

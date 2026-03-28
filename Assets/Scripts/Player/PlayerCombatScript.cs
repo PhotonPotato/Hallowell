@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class PlayerCombatScript : MonoBehaviour
@@ -24,6 +25,7 @@ public class PlayerCombatScript : MonoBehaviour
     public TrailRenderer swordSwingTipTrail;
 
     [NonSerialized] public List<EnemyHealthContainer> healthContainerCache;
+    public List<IDamagable> damagedEnemyCache = new List<IDamagable>();
 
     private AttackDirection lastAttackDirection;
 
@@ -91,7 +93,9 @@ public class PlayerCombatScript : MonoBehaviour
             //Check for valid colliders and their objects
             foreach (Collider2D col in cols)
             {
-
+                /* DEPRICATED old code for damageable stuff
+                 * REMOVE WHENEVER */
+                #region old shart
                 if (col.gameObject.TryGetComponent<EnemyHealthContainer>(out EnemyHealthContainer enemyHealthContainer))
                 {
                     //Make sure this collider hasn't been damaged before
@@ -102,6 +106,33 @@ public class PlayerCombatScript : MonoBehaviour
 
                     //Save it in the cache for later
                     healthContainerCache.Add(enemyHealthContainer);
+
+                    //Lastly send the slash feedback to the player movement to add player recoil
+                    PlayerManager.playerMovement.EnactAttackRecoil(lastAttackDirection);
+
+                    HitStopManager.Instance?.InitDefaultEasedHitStop();
+                    ScreenShakeManager.Instance?.InitiateDefaultSinShake();
+                }
+                #endregion
+
+                if (col.gameObject.TryGetComponent<IDamagable>(out IDamagable damagableEnemy))
+                {
+                    //Make sure this collider hasn't been damaged before
+                    if (damagedEnemyCache.Contains(damagableEnemy)) return;
+
+                    DamageInfo damageInfo = new DamageInfo
+                    {
+                        amount = weaponAttackDamage,
+                        direction = lastAttackDirection,
+                        attacker = this.gameObject,
+                        contactPoint = col.ClosestPoint(AttackPoint.position),
+                        inheritedVelocity = PlayerManager.playerMovement.playerRB.velocity
+                    };
+
+                    damagableEnemy.DealDamage(damageInfo);
+
+                    //Save it in the cache for later
+                    damagedEnemyCache.Add(damagableEnemy);
 
                     //Lastly send the slash feedback to the player movement to add player recoil
                     PlayerManager.playerMovement.EnactAttackRecoil(lastAttackDirection);
@@ -120,6 +151,8 @@ public class PlayerCombatScript : MonoBehaviour
     {
         //Just clear the cache :)
         healthContainerCache.Clear();
+
+        damagedEnemyCache.Clear();
     }
 
     /// <summary>

@@ -817,7 +817,7 @@ AnimatorStateTransition:
   m_Conditions:
   - m_ConditionMode: 3
     m_ConditionEvent: PlayerAbsXVel
-    m_EventTreshold: 0.00001
+    m_EventTreshold: 0.1
   - m_ConditionMode: 1
     m_ConditionEvent: onGround
     m_EventTreshold: 0
