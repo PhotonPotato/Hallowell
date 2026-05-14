@@ -28,7 +28,7 @@ public class DecalManager : MonoBehaviour
         if (SharedInstance == null)
         {
             SharedInstance = this;
-            DontDestroyOnLoad(this.gameObject);
+            DontDestroyOnLoad(transform.parent);
         }
         else Destroy(this.gameObject);
 

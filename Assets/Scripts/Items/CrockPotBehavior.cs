@@ -207,7 +207,7 @@ public class CrockPotBehavior : MonoBehaviour
 
         if (openInventoryPanel) playerInventoryUIMan.OpenInventoryPanel();
         playerInventoryUIMan.crockpotPanelOpen = true;
-        FindObjectOfType<PlayerManager>().currentInteractionObject = this.gameObject;
+        FindFirstObjectByType<PlayerManager>().currentInteractionObject = this.gameObject;
 
         //Play sound/animation for polish
     }

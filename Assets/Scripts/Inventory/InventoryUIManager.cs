@@ -39,7 +39,7 @@ public class InventoryUIManager : MonoBehaviour
         Instantiate(new GameObject());
         //materialItemSlots = inventorySlotsParent.GetComponentsInChildren<MaterialItemSlot>();
         playerInventory = new PlayerInventory(this);
-        playerMan = FindObjectOfType<PlayerManager>();
+        playerMan = FindFirstObjectByType<PlayerManager>();
 
         defaultHealthBarPos = playerMan.healthBarSlider.gameObject.transform.localPosition;
     }

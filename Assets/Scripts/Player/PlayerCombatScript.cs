@@ -31,7 +31,7 @@ public class PlayerCombatScript : MonoBehaviour
 
     private void Start()
     {
-        PlayerManager = FindObjectOfType<PlayerManager>();
+        PlayerManager = FindFirstObjectByType<PlayerManager>();
 
         healthContainerCache = new List<EnemyHealthContainer>();
 
@@ -115,7 +115,7 @@ public class PlayerCombatScript : MonoBehaviour
                 }
                 #endregion
 
-                if (col.gameObject.TryGetComponent<IDamagable>(out IDamagable damagableEnemy))
+                if (col.gameObject.TryGetComponent(out IDamagable damagableEnemy))
                 {
                     //Make sure this collider hasn't been damaged before
                     if (damagedEnemyCache.Contains(damagableEnemy)) return;
@@ -193,80 +193,4 @@ public class PlayerCombatScript : MonoBehaviour
 
         Gizmos.DrawSphere(AttackPoint.position, weaponAttackRange);
     }
-
-    /*
-    [Header("References")]
-    public Transform attackPoint;
-    [NonSerialized] public PlayerManager playerManager;
-
-    public WeaponAnimationHandler animationHandler;
-    public WeaponSlotManager slotManager;
-
-    [Header("Settings")]
-    public LayerMask enemyLayer;
-    public float attackRange;
-
-    public WeaponItem defaultStartItem;
-
-
-    public void Start()
-    {
-        //Set up refs
-        playerManager = FindObjectOfType<PlayerManager>();
-
-        if (animationHandler == null) return;
-
-        slotManager.LoadWeaponModel(defaultStartItem);
-
-        //Update the slot manager witha  reference to this script
-        slotManager.combatManager = this;
-        animationHandler.combatManager = this;
-
-        healthContainerCache = new List<EnemyHealthContainer>();
-    }
-
-    public void Update()
-    {
-        //Make sure the inventory isnt open
-        if (playerManager.playerInventoryManager.inventoryPanelOpen == false)
-        {
-            //Check for combat button ("left-click") input
-            if (Input.GetMouseButtonDown(0))
-            {
-                //Actually try to attack
-                animationHandler.TryAttack(AttackType.Light01, AttackDirection.Regular);
-            }
-        }
-
-        //Update movement restriction in 
-
-        //Check for weapon active in swing
-        if (animationHandler.attackDealingDamage)
-        {
-            //Run an overlapp collision circle, filtering for enemy layer
-            Collider2D[] cols = Physics2D.OverlapCircleAll(slotManager.damageOriginPoint.position, slotManager.activeWeaponItem.attackRange, enemyLayer);
-
-            //Check for valid colliders and their objects
-            foreach (Collider2D col in cols)
-            {
-                EnemyHealthContainer enemyHealthContainer;
-
-                if (col.gameObject.TryGetComponent<EnemyHealthContainer>(out enemyHealthContainer))
-                {
-                    //Make sure this collider hasn't been damaged before
-                    if (healthContainerCache.Contains(enemyHealthContainer)) return;
-
-                    //Change this later btw MAKE THE DAMAGE AMT MORE NUANCED
-                    enemyHealthContainer.DealDamage(slotManager.activeWeaponItem.baseAttackDamage);
-
-                    //Save it in the cache for later
-                    healthContainerCache.Add(enemyHealthContainer);
-                }
-            }
-        }
-    }
-
-
-
-    */
 }

@@ -107,7 +107,7 @@ public class BoidfangManager : MonoBehaviour
         animationScript = GetComponent<ProceduralQuadropedAnimation>();
         m_healthContainer = GetComponent<EnemyHealthContainer>();
 
-        PlayerManager = FindObjectOfType<PlayerManager>();
+        PlayerManager = FindFirstObjectByType<PlayerManager>();
 
         BoidfangFeelings.init();
 

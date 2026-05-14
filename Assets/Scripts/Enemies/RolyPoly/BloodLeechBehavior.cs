@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class BloodLeechBehavior : MonoBehaviour, IDamagable
@@ -9,7 +10,7 @@ public class BloodLeechBehavior : MonoBehaviour, IDamagable
     SpriteRenderer Renderer;
     [SerializeField] ParticleSystem DamagedParticles;
     KnockbackReceiver Knockback;
-
+    Collider2D CircleCollider;
 
     [Header("Detection")]
     public float playerDetectionRadius = 6;
@@ -40,12 +41,23 @@ public class BloodLeechBehavior : MonoBehaviour, IDamagable
     public float whackedYForce = 3f;
     public float inheritedWhackVelocityMultiplier = .5f;
 
+    [Header("Attack Settings")]
+    public float damageAmount = 20;
+
+    [Header("Status settings")]
+    public float health = 40;
+
+    [Header("Refs")]
+    [SerializeField] GameObject deathParticlesPrefab;
+
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         Animator = GetComponent<Animator>();
         Renderer = GetComponent<SpriteRenderer>();
         Knockback = GetComponent<KnockbackReceiver>();
+        CircleCollider = GetComponent<CircleCollider2D>();
     }
 
     private void FixedUpdate()
@@ -99,7 +111,7 @@ public class BloodLeechBehavior : MonoBehaviour, IDamagable
     /// </summary>
     void DetectPlayer()
     {
-        if (PlayerTransform == null) PlayerTransform = FindObjectOfType<PlayerManager>().transform;
+        if (PlayerTransform == null) PlayerTransform = FindFirstObjectByType<PlayerManager>().transform;
 
         if ((distToPlayer = Vector2.Distance(PlayerTransform.position, transform.position)) < playerDetectionRadius)
         {
@@ -141,8 +153,20 @@ public class BloodLeechBehavior : MonoBehaviour, IDamagable
         else if (playerDetected) Renderer.flipX = PlayerTransform.position.x - transform.position.x < 0 ? true : false;
     }
 
+    /// <summary>
+    /// This is the take damage function
+    /// </summary>
     public void DealDamage(DamageInfo info)
     {
+        health -= info.amount;
+
+        // Check death
+        if (health <= 0)
+        {
+            Instantiate(deathParticlesPrefab, transform.position, Quaternion.identity);
+            Destroy(this.gameObject);
+        }
+
         PlayDamageParticles(info);
 
         Vector2 knockbackVelocity = KnockbackUtility.BuildKnockback(
@@ -180,5 +204,38 @@ public class BloodLeechBehavior : MonoBehaviour, IDamagable
         }
 
         DamagedParticles.Play();
+    }
+
+    public void CheckForPlayerCol()
+    {
+        List<Collider2D> contactBin = new List<Collider2D>();
+
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.layerMask = LayerMask.GetMask("Player");
+
+        if (CircleCollider.GetContacts(filter, contactBin) > 0)
+        {
+            if (contactBin.Any(c => c.tag != "Player")) return;
+
+            DamagePlayer();
+
+            contactBin.Clear();
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == "Player")
+        {
+            if (animatorLunging)
+            {
+                DamagePlayer();
+            }
+        }
+    }
+
+    void DamagePlayer()
+    {
+        PlayerManager.Instance.DealDamage(damageAmount);
     }
 }

@@ -9,11 +9,11 @@ public class DecalRendererFeature : ScriptableRendererFeature
     class DecalRenderPass : ScriptableRenderPass
     {
         private DecalSettings settings;
-        private ProfilingSampler profilingSampler;
+        private ProfilingSampler _profilingSampler;
 
         public DecalRenderPass(string profilingTag)
         {
-            profilingSampler = new ProfilingSampler(profilingTag);
+            _profilingSampler = new ProfilingSampler(profilingTag);
         }
 
         public void Setup(DecalSettings settings)
@@ -44,7 +44,7 @@ public class DecalRendererFeature : ScriptableRendererFeature
             const string passName = "Custom Render Pass";
 
             // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
-            using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData, profilingSampler))
+            using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData, _profilingSampler))
             {
                 // Use this scope to set the required inputs and outputs of the pass and to
                 // setup the passData with the required properties needed at pass execution time.

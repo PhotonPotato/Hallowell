@@ -21,7 +21,7 @@ public class PlayerCameraController : MonoBehaviour
 
     private void Start()
     {
-        camConstraints = FindObjectOfType<SceneManager>().cameraContraints;
+        camConstraints = FindFirstObjectByType<LocalSceneManager>().cameraContraints;
     }
 
     public void FixedUpdate()

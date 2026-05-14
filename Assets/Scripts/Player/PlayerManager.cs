@@ -61,7 +61,7 @@ public class PlayerManager : MonoBehaviour
 
         playerHealth = GetComponent<HealthContainer>();
 
-        playerInventoryManager = FindObjectOfType<InventoryUIManager>();
+        playerInventoryManager = FindFirstObjectByType<InventoryUIManager>();
     }
 
     void Update()
