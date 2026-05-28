@@ -129,11 +129,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
+        y: 20
         width: 20
         height: 20
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -151,11 +151,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 20
-        y: 0
+        y: 20
         width: 20
         height: 20
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -173,11 +173,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 40
-        y: 0
+        y: 20
         width: 20
         height: 20
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -195,11 +195,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 60
-        y: 0
+        y: 20
         width: 20
         height: 20
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -217,6 +217,28 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 80
+        y: 20
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 022ebec56f129f710800000000000000
+      internalID: 1727449274077930016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TickWalkCyclepsd_4
+      rect:
+        serializedVersion: 2
+        x: 0
         y: 0
         width: 20
         height: 20
@@ -226,10 +248,98 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 022ebec56f129f710800000000000000
-      internalID: 1727449274077930016
+      spriteID: eacaf51281fd9432bbe9a4c3f1007974
+      internalID: 1031054582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TickWalkCyclepsd_5
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 0
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2c53a41ec18644e36992d396e52f9c2f
+      internalID: -1834440986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TickWalkCyclepsd_6
+      rect:
+        serializedVersion: 2
+        x: 40
+        y: 0
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c6ee780a06ab24deba33240c7ea24537
+      internalID: -1800515716
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TickWalkCyclepsd_7
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 0
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a11a804b0b1464046a4686f8d86769a8
+      internalID: 1968199073
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TickWalkCyclepsd_8
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 0
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 08e384a7d00244570a2a14edc79b6698
+      internalID: 473639049
       vertices: []
       indices: 
       edges: []
@@ -251,6 +361,11 @@ TextureImporter:
       TickWalkCyclepsd_1: -1468330596650482111
       TickWalkCyclepsd_2: 4360582107768997474
       TickWalkCyclepsd_3: 1727449274077930016
+      TickWalkCyclepsd_4: 1031054582
+      TickWalkCyclepsd_5: -1834440986
+      TickWalkCyclepsd_6: -1800515716
+      TickWalkCyclepsd_7: 1968199073
+      TickWalkCyclepsd_8: 473639049
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

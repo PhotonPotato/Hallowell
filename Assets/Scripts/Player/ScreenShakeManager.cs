@@ -21,6 +21,9 @@ public class ScreenShakeManager : MonoBehaviour
     public float defaultSinShakeIntensity = .15f;
     public float defaultSinShakeFrequency = 40f;
 
+    public List<IEnumerator> activeShakes = new List<IEnumerator>();
+
+    // Just leaving this, its deprecated but so what
     public IEnumerator currentShake;
 
     private void Awake()
@@ -35,6 +38,14 @@ public class ScreenShakeManager : MonoBehaviour
     {
         if (Input.GetKeyDown("p")) InitiateDefaultPerlinShake();
         if (Input.GetKeyDown("l")) InitiateDefaultSinShake();
+    }
+
+    private void DeleteShakeFromActive(IEnumerator shake)
+    {
+        activeShakes.Remove(shake);
+
+        // Make sure the screen returns to center
+        if (activeShakes.Count == 0) transform.localPosition = Vector3.zero;
     }
 
     /// <summary>
@@ -57,13 +68,6 @@ public class ScreenShakeManager : MonoBehaviour
     /// <summary>
     /// Coroutine for screen shake using perlin noise. Use for more disorienting shake.
     /// </summary>
-    /// <param name="duration"></param>
-    /// <param name="intensity"></param>
-    /// <param name="sampleFrequency"></param>
-    /// <param name="startTimestamp"></param>
-    /// <param name="seedX"></param>
-    /// <param name="seedY"></param>
-    /// <returns></returns>
     private IEnumerator PerlinShake(float duration, float intensity, float sampleFrequency, float startTimestamp, float? seedX = null, float? seedY = null)
     {
         float elapsedTime = 0;
@@ -95,43 +99,67 @@ public class ScreenShakeManager : MonoBehaviour
     /// </summary>
     public void InitiateSinShake(float duration, float intensity, float frequency)
     {
-        if (currentShake != null) StopCoroutine(currentShake);
+        // Save this shake instance
+        IEnumerator shakeInstance = null;
+        shakeInstance = SinShake(duration, intensity, frequency, () => DeleteShakeFromActive(shakeInstance));
 
-        currentShake = SinShake(duration, intensity, frequency);
-
-        StartCoroutine(currentShake);
+        // Add it to the active shakes
+        activeShakes.Add(shakeInstance);
+        StartCoroutine(shakeInstance);
     }
 
     /// <summary>
     /// Coroutine for screen shake using layered sin waves.
     /// </summary>
-    private IEnumerator SinShake(float duration, float intensity, float frequency, float octaves = 2)
+    private IEnumerator SinShake(float duration, float intensity, float frequency, System.Action onComplete = null, float octaves = 2)
     {
         float elapsedTime = 0;
         float startTimestamp = Time.time;
 
         int shakeYDir =  Random.Range(0, 2) == 0 ? -1 : 1;
 
-        // Shake
-        while (elapsedTime < duration || Mathf.Abs(transform.localPosition.x) > .1f)
+        try
         {
-            elapsedTime = Time.time - startTimestamp;
-
-            float xOffset = 0;
-            float yOffset = 0;
-
-            for (int i = 1; i <= octaves; i++)
+            // Shake
+            while (elapsedTime < duration || Mathf.Abs(transform.localPosition.x) > .1f)
             {
-                xOffset += Mathf.Sin(elapsedTime * frequency * i) * intensity / i;
-                yOffset += Mathf.Sin(elapsedTime * frequency * i) * intensity / i * shakeYDir;
+                elapsedTime = Time.time - startTimestamp;
+
+                float xOffset = 0;
+                float yOffset = 0;
+
+                for (int i = 1; i <= octaves; i++)
+                {
+                    xOffset += Mathf.Sin(elapsedTime * frequency * i) * intensity / i;
+                    yOffset += Mathf.Sin(elapsedTime * frequency * i) * intensity / i * shakeYDir;
+                }
+
+                transform.localPosition = new Vector3(xOffset, yOffset, 0) * transform.parent.position.z * zToIntesityMultiplier;
+
+                yield return null;
             }
-
-            transform.localPosition = new Vector3(xOffset, yOffset, 0) * transform.parent.position.z * zToIntesityMultiplier;
-
-            yield return null;
         }
+        finally
+        {
+            onComplete?.Invoke();
+        }
+    }
 
-        currentShake = null;
-        transform.localPosition = Vector3.zero;
+    public void InitShakeByType(ScreenShakeType type)
+    {
+        switch (type)
+        {
+            case ScreenShakeType.Default:
+                InitiateDefaultSinShake();
+                break;
+
+            case ScreenShakeType.Hit:
+                InitiateSinShake(.05f, .1f, 40);
+                break;
+
+            case ScreenShakeType.Explosion:
+                InitiateSinShake(.08f, .15f, 30);
+                break;
+        }
     }
 }

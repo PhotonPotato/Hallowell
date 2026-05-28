@@ -36,6 +36,7 @@ public enum WeaponTag
     HeavyAttack
 }
 
+// TODO: just delete this bullshit, clean it up
 public enum HealthContainerType
 {
     Player,
@@ -48,4 +49,11 @@ public enum EnemyTag
     Light,
     Staggerable,
     Etc
+}
+
+public enum ScreenShakeType
+{
+    Default,
+    Hit,
+    Explosion
 }
