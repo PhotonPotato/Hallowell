@@ -20,17 +20,32 @@ public class TickBehavior : MonoBehaviour, IDamagable
     [Header("Behavior Settings")]
     [SerializeField] private int distToInitExplosion = 5;
     public bool exploding = false;
-
-    [Header("Movement Settings")]
-    public Vector2 velocity;
     public float movementSpeed = 4;
     public float maxMovementSpeed = 4;
+
+    [Header("Physics Settings")]
+    public Vector2 velocity;
+    [SerializeField] private Vector2 GroundDir = Vector2.down;
+    [SerializeField] private Vector2 ForwardDir = Vector2.right;
+    public float thisColRadius = .875f;
+    public float lookAheadLen = .875f;
+    public float lookDownLen = 1.75f;
 
     [Space]
 
     public float groundDetectionLen = .3f;
     public LayerMask groundMask;
     public bool touchingGround = false;
+
+    [Header("Rotation Settings")]
+    public float rotationSpeed = 6;
+    private float targetZRotation;
+
+    private Vector3 targetPosition;
+    [SerializeField] bool isRoundingCorner = false;
+    [SerializeField] private float targetPositionArrivalThreshold = .05f;
+    private float timeOfLastSmoothing = float.NegativeInfinity;
+    [SerializeField] private float thresholdToGiveUpSmoothing = .8f;
 
     [Header("Knockback Settings")]
     public float whackedXForce = 3f;
@@ -48,6 +63,7 @@ public class TickBehavior : MonoBehaviour, IDamagable
     [Header("Refs")]
     [SerializeField] GameObject deathParticlesPrefab;
 
+    Vector3 cornerRayOriginTMP;
 
     private void Awake()
     {
@@ -58,14 +74,17 @@ public class TickBehavior : MonoBehaviour, IDamagable
         CircleCollider = GetComponent<CircleCollider2D>();
     }
 
+    private void Start()
+    {
+        InitialGroundDetection();
+    }
+
     private void FixedUpdate()
     {
         DetectGround();
         DetectPlayer();
 
         velocity = rb.velocity;
-
-        velocity.y += -.3f;
 
         // Check if knockback control lock is on
         if (!Knockback.IsControlLocked)
@@ -95,10 +114,28 @@ public class TickBehavior : MonoBehaviour, IDamagable
             }    
         }
 
+        // Smoothly interpolate towards the target corner rotation
+        float currentZ = transform.eulerAngles.z;
+        float newZ = Mathf.LerpAngle(currentZ, targetZRotation, rotationSpeed * Time.fixedDeltaTime);
+        transform.rotation = Quaternion.Euler(0, 0, newZ);
 
-        Knockback.Tick(Time.fixedDeltaTime);
+        if (isRoundingCorner)
+        {
+            transform.position = Vector3.Lerp(transform.position, targetPosition, Time.fixedDeltaTime * rotationSpeed);
 
-        rb.velocity = velocity + Knockback.CurrentVelocity;
+            velocity = Vector2.zero;
+            rb.velocity = Vector2.zero;
+        }
+        else
+        {
+            // Otherwise apply normal velocities and moves
+            MoveTick();
+
+            Knockback.Tick(Time.fixedDeltaTime);
+
+            rb.velocity = velocity + Knockback.CurrentVelocity;
+        }
+
 
         UpdateSpriteRenderer();
     }
@@ -120,7 +157,111 @@ public class TickBehavior : MonoBehaviour, IDamagable
 
     void DetectGround()
     {
-        touchingGround = Physics2D.Raycast(transform.position, Vector2.down, groundDetectionLen, groundMask).collider != null;
+        touchingGround = Physics2D.Raycast(transform.position, GroundDir, groundDetectionLen, groundMask).collider != null;
+
+        if (isRoundingCorner)
+        {
+            if (Vector3.Distance(transform.position, targetPosition) <= targetPositionArrivalThreshold || Time.time - timeOfLastSmoothing > thresholdToGiveUpSmoothing)
+            {
+                // Snap it
+                transform.position = targetPosition;
+
+                isRoundingCorner = false;
+            }
+        }
+
+        // Look for wall in front
+        if (!isRoundingCorner && Physics2D.Raycast(transform.position, ForwardDir, groundDetectionLen, groundMask) is { collider: not null } hit)
+        {
+            // Rotate
+            GroundDir = ForwardDir;
+
+            // Recalc player pos
+            targetPosition = hit.point + (GroundDir * -1 * thisColRadius);
+            targetZRotation = Mathf.Atan2(hit.normal.y, hit.normal.x) * Mathf.Rad2Deg - 90f;
+
+            touchingGround = true;
+            isRoundingCorner = true;
+            timeOfLastSmoothing = Time.time;
+        }
+
+        cornerRayOriginTMP = (Vector2)transform.position   // origin
+                                    + (ForwardDir * lookAheadLen)   // forward
+                                    + (GroundDir * lookDownLen);   // down
+
+        if (!isRoundingCorner && !touchingGround)
+        {
+            /// Look around corner ray origin vector
+            ///     _<O__
+            ///  ->|
+            /// ^aka that
+            Vector2 cornerRayOrigin = (Vector2)transform.position   // origin
+                                    + (ForwardDir * lookAheadLen)   // forward
+                                    + (GroundDir * lookDownLen);   // down
+
+            // Then look for a corner we are rounding (looking back a little farther than we stepped forward)
+            if (Physics2D.Raycast(cornerRayOrigin, ForwardDir * -1, lookAheadLen * 1.2f, groundMask) is { collider: not null} rayHit)
+            {
+                Debug.Log("Found around corner!");
+
+                if (Physics2D.OverlapPoint(rayHit.point + (ForwardDir * thisColRadius), groundMask) == null)
+                {
+                    GroundDir = ForwardDir * -1;
+
+                    targetPosition = rayHit.point + (GroundDir * -1 * thisColRadius);
+
+                    targetZRotation = Mathf.Atan2(rayHit.normal.y, rayHit.normal.x) * Mathf.Rad2Deg - 90f;
+
+
+                    touchingGround = true;
+                    isRoundingCorner = true;
+                    timeOfLastSmoothing = Time.time;
+                }
+                else
+                {
+                    Debug.Log("Was inside of object");
+                }
+            }
+        }
+
+        ForwardDir = new Vector2(GroundDir.y * -1, GroundDir.x);
+    }
+
+    /// <summary>
+    /// Used at start to find nearest surface and set direction accordingly
+    /// </summary>
+    void InitialGroundDetection()
+    {
+        // Search cardinal directions
+        for (int i = 0; i < 4; i++)
+        {
+            ForwardDir = new Vector2(GroundDir.y * -1, GroundDir.x);
+
+            if (Physics2D.Raycast(transform.position, GroundDir, groundDetectionLen, groundMask) is { collider: not null } hit)
+            {
+                touchingGround = true;
+
+                return;
+            }
+
+            GroundDir = ForwardDir;
+        }
+    }
+
+    void MoveTick()
+    {
+        if (touchingGround)
+        {
+            // Choose direction to move towards player (prioritize the plane that we are on)
+
+            velocity = ForwardDir * movementSpeed;
+        }
+        else
+        {
+            velocity.y += -.3f;
+        }
+
+        velocity.x = Mathf.Clamp(velocity.x, maxMovementSpeed * -1, maxMovementSpeed);
     }
 
     void UpdateSpriteRenderer()
@@ -215,5 +356,11 @@ public class TickBehavior : MonoBehaviour, IDamagable
     private void OnDrawGizmos()
     {
         Gizmos.DrawWireSphere(transform.position, damageRadius);
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(cornerRayOriginTMP, .3f);
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(targetPosition, .3f);
     }
 }
