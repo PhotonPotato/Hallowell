@@ -202,8 +202,6 @@ public class TickBehavior : MonoBehaviour, IDamagable
             // Then look for a corner we are rounding (looking back a little farther than we stepped forward)
             if (Physics2D.Raycast(cornerRayOrigin, ForwardDir * -1, lookAheadLen * 1.2f, groundMask) is { collider: not null} rayHit)
             {
-                Debug.Log("Found around corner!");
-
                 if (Physics2D.OverlapPoint(rayHit.point + (ForwardDir * thisColRadius), groundMask) == null)
                 {
                     GroundDir = ForwardDir * -1;
@@ -216,10 +214,6 @@ public class TickBehavior : MonoBehaviour, IDamagable
                     touchingGround = true;
                     isRoundingCorner = true;
                     timeOfLastSmoothing = Time.time;
-                }
-                else
-                {
-                    Debug.Log("Was inside of object");
                 }
             }
         }
