@@ -1,5 +1,6 @@
 using UnityEngine;
 using Pathfinding;
+using System;
 
 public class TickBehavior : MonoBehaviour, IDamagable
 {
@@ -24,7 +25,6 @@ public class TickBehavior : MonoBehaviour, IDamagable
     public bool exploding = false;
     public float movementSpeed = 4;
     public float maxMovementSpeed = 4;
-    [SerializeField] private bool isJumpingOrDropping = false;
 
     [Header("Physics Settings")]
     public Vector2 velocity;
@@ -47,6 +47,10 @@ public class TickBehavior : MonoBehaviour, IDamagable
     [SerializeField] private Vector2 MovementAlongPath;
     [SerializeField] private float waypointReachedDist = 2f;
     public float distToInitJump = 3f;
+    [SerializeField] private bool isJumpingOrDropping = false;
+    private float timeOfLastJumpOrDrop = float.NegativeInfinity;
+    private float xOfJumpOrDrop;
+    public float tickConnectionJumpForce = 8;
 
     [Header("Rotation Settings")]
     public float rotationSpeed = 6;
@@ -239,6 +243,9 @@ public class TickBehavior : MonoBehaviour, IDamagable
     /// </summary>
     void InitialGroundDetection()
     {
+        // Give it some time to jump or drop
+        if (Time.time - timeOfLastJumpOrDrop <= .25f) return;
+
         GroundDir = Vector2.down;
 
         // Search cardinal directions
@@ -250,6 +257,7 @@ public class TickBehavior : MonoBehaviour, IDamagable
             {
                 touchingGround = true;
 
+                Debug.Log("Caught ground at " + Time.frameCount);
                 isJumpingOrDropping = false;
 
                 return;
@@ -261,45 +269,32 @@ public class TickBehavior : MonoBehaviour, IDamagable
 
     void MoveTick()
     {
+        if (isJumpingOrDropping)
+        {
+            // Smooth x to that of the jump/drop location
+            transform.position = new Vector3(Mathf.Lerp(transform.position.x, xOfJumpOrDrop, 10 * Time.deltaTime),
+                                             transform.position.y,
+                                             transform.position.z);
+        }
+
         if (touchingGround)
         {
+            // NOTE: jump/drop  detection logic is within this func
+            RecalculateCurrentPathNode();
+
             // Choose direction to move towards player (prioritize the plane that we are on)
-            Vector2 dirToNextPathPoint = (GetNextPathNode() ?? transform.position) - transform.position;
-            
-            // Look for link to jump/drop
-            if (dirToNextPathPoint.magnitude > distToInitJump)
-            { 
-                // check above/below
-                if (dirToNextPathPoint.y > 0)
-                {
-                    Debug.Log("Jump at " + Time.frameCount);
-                    // Jump
-                    velocity.y = 8;
-                }
-                else
-                {
-                    transform.position += Vector3.down * .15f;
-                    Debug.Log("Drop at " + Time.frameCount);
+            Vector2 dirToNextPathPoint = ((Vector3) path.path[pathIndex].position) - transform.position;
 
-                    // Drop
-                    velocity.y = -.5f;
-                }
-
-                velocity.x = 0;
-                touchingGround = false;
-                isJumpingOrDropping = true;
-            }
-            else if (!isJumpingOrDropping) // Only move if we ain't jump/dropping
+            if (!isJumpingOrDropping) // Only move if we ain't jump/dropping
             {
                 MovementAlongPath = (dirToNextPathPoint * new Vector2(Mathf.Abs(GroundDir.y), Mathf.Abs(GroundDir.x))).normalized;
 
                 velocity = MovementAlongPath * movementSpeed;
             }
         }
-        else
+        else // Apply gravity in teh air
         {
-            // Reduce gravity if jumping
-            velocity.y += (isJumpingOrDropping && velocity.y > 0) ? -.15f : -.3f;
+            velocity.y += -.3f;
         }
 
         velocity.x = Mathf.Clamp(velocity.x, maxMovementSpeed * -1, maxMovementSpeed);
@@ -324,19 +319,53 @@ public class TickBehavior : MonoBehaviour, IDamagable
         }
     }
 
-    private Vector3? GetNextPathNode()
+    private void RecalculateCurrentPathNode()
     {
-        if (path == null || pathIndex >= path.vectorPath.Count) return null;
+        if (path == null || pathIndex >= path.path.Count) return;
 
         // Walk the path to find nearest
-        while (pathIndex < path.vectorPath.Count && Vector3.Distance(transform.position, path.vectorPath[pathIndex]) < waypointReachedDist)
+        while (pathIndex < path.path.Count && Vector3.Distance(transform.position, (Vector3)path.path[pathIndex].position) < waypointReachedDist)
         {
+            if (TickGraphModifier.SpecialConnections.TryGetValue((path.path[pathIndex], path.path[pathIndex + 1]), out TickGraphConnectionType nextConnectionType))
+            {
+                xOfJumpOrDrop = ((Vector3)path.path[pathIndex].position).x;
+
+                InitiateJumpOrDrop(nextConnectionType);
+            }
             pathIndex++;
         }
 
-        if (pathIndex >= path.vectorPath.Count) return null;
+        if (pathIndex >= path.path.Count) return;
        
-        return path.vectorPath[pathIndex];
+        return;
+    }
+
+    private void InitiateJumpOrDrop(TickGraphConnectionType nextConnectionType)
+    {
+        // check if its a drop or jump
+        if (nextConnectionType == TickGraphConnectionType.JumpUp)
+        {
+            Debug.Log("Jump at " + Time.frameCount);
+            // Jump
+            velocity.y = tickConnectionJumpForce;
+
+            targetZRotation = 180;
+        }
+        else // Then its a drop
+        {
+            transform.position += Vector3.down * .15f;
+            Debug.Log("Drop at " + Time.frameCount);
+
+            // Drop
+            velocity.y = -.5f;
+
+            targetZRotation = 0;
+        }
+
+        velocity.x = 0;
+        touchingGround = false;
+        isJumpingOrDropping = true;
+        timeOfLastJumpOrDrop = Time.time;
     }
 
     void UpdateSpriteRenderer()

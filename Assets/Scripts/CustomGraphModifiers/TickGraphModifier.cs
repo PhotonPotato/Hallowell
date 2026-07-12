@@ -105,7 +105,9 @@ public class TickGraphModifier : GraphModifier
 
             GridNode scanNode = grid.nodes[newY * grid.width + pos.x];
 
-            if (scanNode.Walkable)
+            if (scanNode.Walkable &&
+                grid.nodes[newY * grid.width + pos.x + 1].Walkable &&
+                grid.nodes[newY * grid.width + pos.x - 1].Walkable)
             {
                 uint cost = (uint)(Mathf.Abs(dy) * 1000);
 
