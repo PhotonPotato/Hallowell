@@ -14,11 +14,13 @@ public class TickGraphModifier : GraphModifier
     // Indicies that have been marked to set as not walkable
     private List<int> dirtyNodeIndices = new List<int>();
 
+    public static readonly Dictionary<(GraphNode from, GraphNode to), TickGraphConnectionType> SpecialConnections = new Dictionary<(GraphNode, GraphNode), TickGraphConnectionType>();
+
     public override void OnPostScan()
     {
         GridGraph grid = AstarPath.active.data.gridGraph;
         if (grid == null) return;
-        
+
         // Pass to flag invalid tick position tiles in the graph
         for (int y = 0; y < grid.depth; y++)
         {
@@ -108,6 +110,8 @@ public class TickGraphModifier : GraphModifier
                 uint cost = (uint)(Mathf.Abs(dy) * 1000);
 
                 cur.AddConnection(scanNode, cost);
+
+                SpecialConnections.Add((cur, scanNode), dy > 0 ? TickGraphConnectionType.JumpUp : TickGraphConnectionType.DropDown);
 
                 Debug.Log("Connection Made!");
             }

@@ -145,6 +145,10 @@ public class ScreenShakeManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles creating screenshake for a variety of scenarios.
+    /// </summary>
+    /// <param name="type"> The type of screenshake </param>
     public void InitShakeByType(ScreenShakeType type)
     {
         switch (type)

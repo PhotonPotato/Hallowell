@@ -57,3 +57,9 @@ public enum ScreenShakeType
     Hit,
     Explosion
 }
+
+public enum TickGraphConnectionType
+{
+    JumpUp,
+    DropDown
+}

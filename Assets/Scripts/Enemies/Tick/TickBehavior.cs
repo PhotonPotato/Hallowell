@@ -1,4 +1,5 @@
 using UnityEngine;
+using Pathfinding;
 
 public class TickBehavior : MonoBehaviour, IDamagable
 {
@@ -10,6 +11,7 @@ public class TickBehavior : MonoBehaviour, IDamagable
     [SerializeField] ParticleSystem ExplosionParticles;
     KnockbackReceiver Knockback;
     Collider2D CircleCollider;
+    Seeker Seeker;
 
     [Header("Detection")]
     public Transform PlayerTransform;
@@ -22,6 +24,7 @@ public class TickBehavior : MonoBehaviour, IDamagable
     public bool exploding = false;
     public float movementSpeed = 4;
     public float maxMovementSpeed = 4;
+    [SerializeField] private bool isJumpingOrDropping = false;
 
     [Header("Physics Settings")]
     public Vector2 velocity;
@@ -36,6 +39,14 @@ public class TickBehavior : MonoBehaviour, IDamagable
     public float groundDetectionLen = .3f;
     public LayerMask groundMask;
     public bool touchingGround = false;
+
+    [Space]
+
+    Path path;
+    private int pathIndex = 0;
+    [SerializeField] private Vector2 MovementAlongPath;
+    [SerializeField] private float waypointReachedDist = 2f;
+    public float distToInitJump = 3f;
 
     [Header("Rotation Settings")]
     public float rotationSpeed = 6;
@@ -72,16 +83,24 @@ public class TickBehavior : MonoBehaviour, IDamagable
         Renderer = GetComponent<SpriteRenderer>();
         Knockback = GetComponent<KnockbackReceiver>();
         CircleCollider = GetComponent<CircleCollider2D>();
+        Seeker = GetComponent<Seeker>();
     }
 
     private void Start()
     {
         InitialGroundDetection();
+
+        InvokeRepeating(nameof(RecalculatePath), 0f,  5f);
     }
 
     private void FixedUpdate()
     {
-        DetectGround();
+        // Only detect ground regularly if we aren't jumping or dropping
+        if (!isJumpingOrDropping)
+            DetectGround();
+        else
+            InitialGroundDetection();
+
         DetectPlayer();
 
         velocity = rb.velocity;
@@ -89,13 +108,10 @@ public class TickBehavior : MonoBehaviour, IDamagable
         // Check if knockback control lock is on
         if (!Knockback.IsControlLocked)
         {
-            // Move towards player
             if (playerDetected)
             {
                 if (!exploding)
                 {
-                    velocity.x += Mathf.Sign(PlayerTransform.position.x - transform.position.x) * movementSpeed;
-
                     Animator.ResetTrigger("Explode");
 
                     // Init explotion
@@ -106,10 +122,6 @@ public class TickBehavior : MonoBehaviour, IDamagable
 
                         PlayDamageAreaTelegraphingParticles();
                     }
-                }
-                else
-                {
-                    velocity.x *= .5f;
                 }
             }    
         }
@@ -159,6 +171,9 @@ public class TickBehavior : MonoBehaviour, IDamagable
     {
         touchingGround = Physics2D.Raycast(transform.position, GroundDir, groundDetectionLen, groundMask).collider != null;
 
+        ForwardDir = MovementAlongPath;
+
+        // Interp
         if (isRoundingCorner)
         {
             if (Vector3.Distance(transform.position, targetPosition) <= targetPositionArrivalThreshold || Time.time - timeOfLastSmoothing > thresholdToGiveUpSmoothing)
@@ -217,8 +232,6 @@ public class TickBehavior : MonoBehaviour, IDamagable
                 }
             }
         }
-
-        ForwardDir = new Vector2(GroundDir.y * -1, GroundDir.x);
     }
 
     /// <summary>
@@ -226,6 +239,8 @@ public class TickBehavior : MonoBehaviour, IDamagable
     /// </summary>
     void InitialGroundDetection()
     {
+        GroundDir = Vector2.down;
+
         // Search cardinal directions
         for (int i = 0; i < 4; i++)
         {
@@ -234,6 +249,8 @@ public class TickBehavior : MonoBehaviour, IDamagable
             if (Physics2D.Raycast(transform.position, GroundDir, groundDetectionLen, groundMask) is { collider: not null } hit)
             {
                 touchingGround = true;
+
+                isJumpingOrDropping = false;
 
                 return;
             }
@@ -247,15 +264,79 @@ public class TickBehavior : MonoBehaviour, IDamagable
         if (touchingGround)
         {
             // Choose direction to move towards player (prioritize the plane that we are on)
+            Vector2 dirToNextPathPoint = (GetNextPathNode() ?? transform.position) - transform.position;
+            
+            // Look for link to jump/drop
+            if (dirToNextPathPoint.magnitude > distToInitJump)
+            { 
+                // check above/below
+                if (dirToNextPathPoint.y > 0)
+                {
+                    Debug.Log("Jump at " + Time.frameCount);
+                    // Jump
+                    velocity.y = 8;
+                }
+                else
+                {
+                    transform.position += Vector3.down * .15f;
+                    Debug.Log("Drop at " + Time.frameCount);
 
-            velocity = ForwardDir * movementSpeed;
+                    // Drop
+                    velocity.y = -.5f;
+                }
+
+                velocity.x = 0;
+                touchingGround = false;
+                isJumpingOrDropping = true;
+            }
+            else if (!isJumpingOrDropping) // Only move if we ain't jump/dropping
+            {
+                MovementAlongPath = (dirToNextPathPoint * new Vector2(Mathf.Abs(GroundDir.y), Mathf.Abs(GroundDir.x))).normalized;
+
+                velocity = MovementAlongPath * movementSpeed;
+            }
         }
         else
         {
-            velocity.y += -.3f;
+            // Reduce gravity if jumping
+            velocity.y += (isJumpingOrDropping && velocity.y > 0) ? -.15f : -.3f;
         }
 
         velocity.x = Mathf.Clamp(velocity.x, maxMovementSpeed * -1, maxMovementSpeed);
+    }
+
+    private void RecalculatePath()
+    {
+        Seeker.StartPath(
+                transform.position,
+                PlayerTransform.position,
+                OnPathComplete);
+    }
+
+    void OnPathComplete(Path path)
+    {
+        if (!path.error)
+        {
+            Debug.Log("New path calculated!");
+            this.path = path;
+
+            pathIndex = 0;
+        }
+    }
+
+    private Vector3? GetNextPathNode()
+    {
+        if (path == null || pathIndex >= path.vectorPath.Count) return null;
+
+        // Walk the path to find nearest
+        while (pathIndex < path.vectorPath.Count && Vector3.Distance(transform.position, path.vectorPath[pathIndex]) < waypointReachedDist)
+        {
+            pathIndex++;
+        }
+
+        if (pathIndex >= path.vectorPath.Count) return null;
+       
+        return path.vectorPath[pathIndex];
     }
 
     void UpdateSpriteRenderer()
