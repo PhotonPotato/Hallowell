@@ -19,6 +19,9 @@ public class TickGraphModifier : GraphModifier
     public override void OnPostScan()
     {
         GridGraph grid = AstarPath.active.data.gridGraph;
+
+        bool[,] origScan = CacheOriginalScan(grid);
+
         if (grid == null) return;
 
         // Pass to flag invalid tick position tiles in the graph
@@ -55,7 +58,7 @@ public class TickGraphModifier : GraphModifier
             {
                 grid.CalculateConnections(x, y);
 
-                AddTickJumpConnectionsForPos(grid, new Vector2Int(x, y));
+                AddTickJumpConnectionsForPos(grid, new Vector2Int(x, y), origScan);
             }
         }
 
@@ -88,7 +91,7 @@ public class TickGraphModifier : GraphModifier
         return !grid.nodes[pos.y * grid.width + pos.x].Walkable;
     }
 
-    private void AddTickJumpConnectionsForPos(GridGraph grid, Vector2Int pos)
+    private void AddTickJumpConnectionsForPos(GridGraph grid, Vector2Int pos, bool[,] originalWalkableScan)
     {
         GridNode cur = grid.nodes[pos.y * grid.width + pos.x];
 
@@ -97,11 +100,16 @@ public class TickGraphModifier : GraphModifier
         // Make sure its not just a wall (check for non-walkable tile above & below)
         if (!IsSolid(grid, pos + Vector2Int.up) || !IsSolid(grid, pos + Vector2Int.down)) return;
 
-        for (int dy = -maxVertJumpLen; dy <= maxVertJumpLen; dy++)
+        // Check above
+        for (int dy = 1; dy <= maxVertJumpLen; dy++)
         {
             int newY = pos.y + dy;
 
-            if (newY >= grid.depth || newY < 0 || Mathf.Abs(dy) <= 1) continue;
+            //Out of bounds check
+            if (newY >= grid.depth || newY < 0) continue;
+
+            // If we are going through a platform, back out
+            if (!originalWalkableScan[pos.x, newY]) break;
 
             GridNode scanNode = grid.nodes[newY * grid.width + pos.x];
 
@@ -113,10 +121,56 @@ public class TickGraphModifier : GraphModifier
 
                 cur.AddConnection(scanNode, cost);
 
-                SpecialConnections.Add((cur, scanNode), dy > 0 ? TickGraphConnectionType.JumpUp : TickGraphConnectionType.DropDown);
+                SpecialConnections.Add((cur, scanNode), TickGraphConnectionType.JumpUp);
 
                 Debug.Log("Connection Made!");
             }
         }
+
+        // Check below
+        for (int dy = -1; dy >= maxVertJumpLen * -1; dy--)
+        {
+            int newY = pos.y + dy;
+
+            //Out of bounds check
+            if (newY >= grid.depth || newY < 0) continue;
+
+            // If we are going through a platform, back out
+            if (!originalWalkableScan[pos.x, newY]) break;
+
+            GridNode scanNode = grid.nodes[newY * grid.width + pos.x];
+
+            if (scanNode.Walkable &&
+                grid.nodes[newY * grid.width + pos.x + 1].Walkable &&
+                grid.nodes[newY * grid.width + pos.x - 1].Walkable)
+            {
+                uint cost = (uint)(Mathf.Abs(dy) * 1000);
+
+                cur.AddConnection(scanNode, cost);
+                
+                SpecialConnections.Add((cur, scanNode), TickGraphConnectionType.DropDown);
+
+                Debug.Log("Connection Made!");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns a 2D bool array representing the walkability of the original scan.
+    /// Effectively caching the positions of platforms
+    /// </summary>
+    private bool[,] CacheOriginalScan(GridGraph grid)
+    {
+        bool[,] output = new bool[grid.width, grid.depth];
+
+        for (int y = 0; y < grid.depth; y++)
+        {
+            for (int x = 0; x < grid.width; x++)
+            {
+                output[x, y] = grid.nodes[y * grid.width + x].Walkable;
+            }
+        }
+
+        return output;
     }
 }

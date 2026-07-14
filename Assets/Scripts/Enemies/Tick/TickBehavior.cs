@@ -44,7 +44,6 @@ public class TickBehavior : MonoBehaviour, IDamagable
 
     Path path;
     private int pathIndex = 0;
-    [SerializeField] private Vector2 MovementAlongPath;
     [SerializeField] private float waypointReachedDist = 2f;
     public float distToInitJump = 3f;
     [SerializeField] private bool isJumpingOrDropping = false;
@@ -127,29 +126,37 @@ public class TickBehavior : MonoBehaviour, IDamagable
                         PlayDamageAreaTelegraphingParticles();
                     }
                 }
-            }    
-        }
+            }
 
-        // Smoothly interpolate towards the target corner rotation
-        float currentZ = transform.eulerAngles.z;
-        float newZ = Mathf.LerpAngle(currentZ, targetZRotation, rotationSpeed * Time.fixedDeltaTime);
-        transform.rotation = Quaternion.Euler(0, 0, newZ);
+            /// MAIN MOVEMENT CODE
+            
+            // Smoothly interpolate towards the target corner rotation
+            float currentZ = transform.eulerAngles.z;
+            float newZ = Mathf.LerpAngle(currentZ, targetZRotation, rotationSpeed * Time.fixedDeltaTime);
+            transform.rotation = Quaternion.Euler(0, 0, newZ);
 
-        if (isRoundingCorner)
-        {
-            transform.position = Vector3.Lerp(transform.position, targetPosition, Time.fixedDeltaTime * rotationSpeed);
+            if (isRoundingCorner)
+            {
+                transform.position = Vector3.Lerp(transform.position, targetPosition, Time.fixedDeltaTime * rotationSpeed);
 
-            velocity = Vector2.zero;
-            rb.velocity = Vector2.zero;
-        }
-        else
-        {
-            // Otherwise apply normal velocities and moves
-            MoveTick();
+                velocity = Vector2.zero;
+                rb.velocity = Vector2.zero;
+            }
+            else if (!exploding)
+            {
+                if (playerDetected) // Only move towards player if detected
+                {
+                    // Otherwise apply normal velocities and moves
+                    MoveTickToPlayer();
+                }
+                else
+                {
+                    MoveTickBasic();
+                }
 
-            Knockback.Tick(Time.fixedDeltaTime);
-
-            rb.velocity = velocity + Knockback.CurrentVelocity;
+                Knockback.Tick(Time.fixedDeltaTime);
+                rb.velocity = velocity + Knockback.CurrentVelocity;
+            }
         }
 
 
@@ -175,8 +182,6 @@ public class TickBehavior : MonoBehaviour, IDamagable
     {
         touchingGround = Physics2D.Raycast(transform.position, GroundDir, groundDetectionLen, groundMask).collider != null;
 
-        ForwardDir = MovementAlongPath;
-
         // Interp
         if (isRoundingCorner)
         {
@@ -187,6 +192,8 @@ public class TickBehavior : MonoBehaviour, IDamagable
 
                 isRoundingCorner = false;
             }
+
+            return;
         }
 
         // Look for wall in front
@@ -202,6 +209,7 @@ public class TickBehavior : MonoBehaviour, IDamagable
             touchingGround = true;
             isRoundingCorner = true;
             timeOfLastSmoothing = Time.time;
+            return;
         }
 
         cornerRayOriginTMP = (Vector2)transform.position   // origin
@@ -267,7 +275,7 @@ public class TickBehavior : MonoBehaviour, IDamagable
         }
     }
 
-    void MoveTick()
+    void MoveTickToPlayer()
     {
         if (isJumpingOrDropping)
         {
@@ -287,9 +295,9 @@ public class TickBehavior : MonoBehaviour, IDamagable
 
             if (!isJumpingOrDropping) // Only move if we ain't jump/dropping
             {
-                MovementAlongPath = (dirToNextPathPoint * new Vector2(Mathf.Abs(GroundDir.y), Mathf.Abs(GroundDir.x))).normalized;
+                ForwardDir = (dirToNextPathPoint * new Vector2(Mathf.Abs(GroundDir.y), Mathf.Abs(GroundDir.x))).normalized;
 
-                velocity = MovementAlongPath * movementSpeed;
+                velocity = ForwardDir * movementSpeed;
             }
         }
         else // Apply gravity in teh air
@@ -298,6 +306,21 @@ public class TickBehavior : MonoBehaviour, IDamagable
         }
 
         velocity.x = Mathf.Clamp(velocity.x, maxMovementSpeed * -1, maxMovementSpeed);
+    }
+
+    void MoveTickBasic()
+    {
+        if (touchingGround)
+        {
+            // Forward is to the local right
+            ForwardDir = new Vector2(GroundDir.y * -1, GroundDir.x);
+
+            velocity = ForwardDir * movementSpeed;
+        }
+        else
+        {
+            velocity.y -= .3f;
+        }
     }
 
     private void RecalculatePath()
